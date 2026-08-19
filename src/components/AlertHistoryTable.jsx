@@ -46,7 +46,7 @@ export const AlertHistoryTable = ({ alerts = [], onSelectAlert, onViewScreenshot
                 </td>
               </tr>
             ) : (
-              alerts.map(evt => {
+              visibleAlerts.map(evt => {
                 const styling = getLevelColor(evt.level);
                 const isSent = evt.telegramStatus === 'SENT';
                 const hasScreenshot = !!evt.screenshotPath;
