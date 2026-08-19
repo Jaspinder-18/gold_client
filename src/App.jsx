@@ -174,20 +174,23 @@ export function App() {
     }
   };
 
-  // On-demand manual screenshot capture with selected dynamic timeframe and range
+  // On-demand manual screenshot capture with selected dynamic timeframe, range, and bar spacing
   const handleManualCapture = async () => {
     setIsCapturing(true);
     try {
-      const selectedTf = String(config.chartTimeframe || '5');
-      const selectedRange = String(config.chartRange || '2D');
+      const selectedTf = String(config.chartTimeframe || '15');
+      const selectedRange = String(config.chartRange || '1D');
+      const selectedBarSpacing = Number(config.barSpacing || 22);
 
       const res = await api.captureScreenshot({
         level: 'MANUAL',
         timeframe: selectedTf,
-        range: selectedRange
+        range: selectedRange,
+        barSpacing: selectedBarSpacing
       });
 
       if (res.data?.data) {
+        const screenshotPath = res.data.data.cloudinaryUrl || res.data.data.relativePath;
         const dummyAlert = {
           _id: 'manual-' + Date.now(),
           symbol: 'XAUUSD',
@@ -195,9 +198,9 @@ export function App() {
           levelPrice: marketData.price,
           currentPrice: marketData.price,
           tolerance: config.tolerance || 0.20,
-          screenshotPath: res.data.data.relativePath,
+          screenshotPath,
           telegramStatus: 'MANUAL_CAPTURE',
-          triggerReason: `Manual TradingView screenshot capture (${selectedTf}m, ${selectedRange} range)`,
+          triggerReason: `Manual TradingView screenshot capture (${selectedTf}m, ${selectedRange} range, ${selectedBarSpacing}px barSpacing)`,
           timestamp: new Date(),
           isTest: true
         };
@@ -271,6 +274,22 @@ export function App() {
       </main>
 
       {/* Modals & Drawers */}
+      {isCapturing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-dark-900 border border-gold-500/40 rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl space-y-4">
+            <div className="w-12 h-12 border-3 border-gold-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <div>
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                Capturing TradingView Chart
+              </h3>
+              <p className="text-xs text-slate-400 font-mono mt-1">
+                Rendering {config.chartTimeframe || '15'}M ({config.chartRange || '1D'} session) with {config.barSpacing || 22}px zoom & syncing to Cloudinary...
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {selectedAlertForModal && (
         <ScreenshotModal
           alert={selectedAlertForModal}

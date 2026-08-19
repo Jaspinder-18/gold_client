@@ -7,6 +7,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 export const ScreenshotModal = ({ alert, onClose, onDeleteAlert }) => {
   if (!alert) return null;
 
+  const [isImgLoaded, setIsImgLoaded] = React.useState(false);
   const styling = getLevelColor(alert.level);
   const isResistance = alert.level?.startsWith('R');
   const screenshotUrl = alert.screenshotPath?.startsWith('http')
@@ -86,16 +87,25 @@ export const ScreenshotModal = ({ alert, onClose, onDeleteAlert }) => {
           
           {/* Real TradingView Chart Screenshot Preview */}
           {alert.screenshotPath ? (
-            <div className="rounded-xl overflow-hidden border border-dark-800 bg-dark-950 shadow-inner group relative">
+            <div className="rounded-xl overflow-hidden border border-dark-800 bg-dark-950 shadow-inner group relative min-h-[280px] flex items-center justify-center">
+              {!isImgLoaded && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-dark-950 text-slate-400 space-y-3 z-10">
+                  <div className="w-8 h-8 border-2 border-gold-500 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-xs font-mono text-gold-400 animate-pulse">Loading TradingView chart capture...</span>
+                </div>
+              )}
               <img
                 src={screenshotUrl}
                 alt="Actual TradingView Alert Chart Screenshot"
-                className="w-full h-auto object-contain max-h-[560px] mx-auto select-none"
+                onLoad={() => setIsImgLoaded(true)}
+                className={`w-full h-auto object-contain max-h-[560px] mx-auto select-none transition-opacity duration-300 ${isImgLoaded ? 'opacity-100' : 'opacity-0'}`}
               />
-              <div className="absolute top-3 right-3 bg-dark-950/80 backdrop-blur px-3 py-1 rounded-md border border-dark-700 text-[11px] font-mono text-slate-300 flex items-center gap-1">
-                <ZoomIn className="w-3.5 h-3.5 text-gold-400" />
-                <span>Actual TradingView Capture</span>
-              </div>
+              {isImgLoaded && (
+                <div className="absolute top-3 right-3 bg-dark-950/80 backdrop-blur px-3 py-1 rounded-md border border-dark-700 text-[11px] font-mono text-slate-300 flex items-center gap-1">
+                  <ZoomIn className="w-3.5 h-3.5 text-gold-400" />
+                  <span>Actual TradingView Capture</span>
+                </div>
+              )}
             </div>
           ) : (
             <div className="py-16 text-center text-slate-500 font-mono border border-dashed border-dark-800 rounded-xl">

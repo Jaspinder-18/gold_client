@@ -212,6 +212,51 @@ export const ConfigDrawer = ({ config, onClose, onConfigSaved }) => {
                   Controls how many days of clean candlesticks appear in screenshot captures (volume & other indicators removed).
                 </span>
               </div>
+
+              {/* Dynamic Bar Spacing (Candle Width & Zoom) */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-[11px] font-medium text-slate-300">
+                    Candle Bar Spacing (Zoom & Width)
+                  </label>
+                  <span className="text-xs font-mono font-bold text-gold-400">
+                    {formData.barSpacing || 22}px
+                  </span>
+                </div>
+                <div className="grid grid-cols-4 gap-2 mb-2">
+                  {[
+                    { value: 10, label: 'Compact' },
+                    { value: 16, label: 'Standard' },
+                    { value: 22, label: 'Wide' },
+                    { value: 30, label: 'Zoom+' }
+                  ].map(b => (
+                    <button
+                      key={b.value}
+                      type="button"
+                      onClick={() => handleChange('barSpacing', b.value)}
+                      className={`py-1.5 px-2 rounded-lg text-xs font-mono font-bold transition-all ${
+                        (formData.barSpacing || 22) === b.value
+                          ? 'bg-gold-500 text-black shadow-md shadow-gold-500/20 font-black scale-[1.02]'
+                          : 'bg-dark-900 text-slate-400 border border-dark-800 hover:text-white'
+                      }`}
+                    >
+                      {b.label}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="range"
+                  min="6"
+                  max="40"
+                  step="1"
+                  value={formData.barSpacing || 22}
+                  onChange={(e) => handleChange('barSpacing', parseInt(e.target.value, 10))}
+                  className="w-full accent-gold-500 cursor-pointer"
+                />
+                <span className="text-[10px] text-slate-500 block mt-1">
+                  Adjust candle thickness and horizontal zoom dynamically for all screenshot captures.
+                </span>
+              </div>
             </div>
 
             {/* Threshold Rules */}
