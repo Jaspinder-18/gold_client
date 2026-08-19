@@ -190,22 +190,9 @@ export function App() {
       });
 
       if (res.data?.data) {
-        const screenshotPath = res.data.data.cloudinaryUrl || res.data.data.relativePath;
-        const dummyAlert = {
-          _id: 'manual-' + Date.now(),
-          symbol: 'XAUUSD',
-          level: 'MANUAL',
-          levelPrice: marketData.price,
-          currentPrice: marketData.price,
-          tolerance: config.tolerance || 0.20,
-          screenshotPath,
-          telegramStatus: 'MANUAL_CAPTURE',
-          triggerReason: `Manual TradingView screenshot capture (${selectedTf}m, ${selectedRange} range, ${selectedBarSpacing}px barSpacing)`,
-          timestamp: new Date(),
-          isTest: true
-        };
-        setAlerts(prev => [dummyAlert, ...prev].slice(0, 6));
-        setSelectedAlertForModal(dummyAlert);
+        const newEvent = res.data.data;
+        setAlerts(prev => [newEvent, ...prev.filter(a => a._id !== newEvent._id)].slice(0, 6));
+        setSelectedAlertForModal(newEvent);
       }
     } catch (err) {
       alert('Failed to capture TradingView screenshot: ' + (err.response?.data?.error || err.message));
