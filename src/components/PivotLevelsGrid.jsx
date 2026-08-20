@@ -5,10 +5,10 @@ import { formatPrice } from '../utils/formatters';
 export const PivotLevelsGrid = ({ config, alertStates, currentPrice, onAutoCalc, isAutoCalculating }) => {
   // Strictly only the 4 levels: R3, R2, S2, S3
   const levels = [
-    { key: 'r3', name: 'R3', label: 'Resistance 3', price: config?.r3 || 4657.02, type: 'RESISTANCE' },
-    { key: 'r2', name: 'R2', label: 'Resistance 2', price: config?.r2 || 4580.75, type: 'RESISTANCE' },
-    { key: 's2', name: 'S2', label: 'Support 2', price: config?.s2 || 4333.97, type: 'SUPPORT' },
-    { key: 's3', name: 'S3', label: 'Support 3', price: config?.s3 || 4257.70, type: 'SUPPORT' }
+    { key: 'r3', name: 'R3', label: 'Resistance 3', price: config?.r3 || 4545.20, type: 'RESISTANCE' },
+    { key: 'r2', name: 'R2', label: 'Resistance 2', price: config?.r2 || 4527.71, type: 'RESISTANCE' },
+    { key: 's2', name: 'S2', label: 'Support 2', price: config?.s2 || 4471.13, type: 'SUPPORT' },
+    { key: 's3', name: 'S3', label: 'Support 3', price: config?.s3 || 4453.64, type: 'SUPPORT' }
   ];
 
   return (

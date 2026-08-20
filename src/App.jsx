@@ -26,10 +26,10 @@ export function App() {
   });
 
   const [config, setConfig] = useState({
-    r3: 4657.02,
-    r2: 4580.75,
-    s2: 4333.97,
-    s3: 4257.70,
+    r3: 4545.20,
+    r2: 4527.71,
+    s2: 4471.13,
+    s3: 4453.64,
     tolerance: 0.20,
     retriggerDistance: 1.00,
     enabled: true,
