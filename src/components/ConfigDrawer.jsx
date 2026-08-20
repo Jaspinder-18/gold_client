@@ -259,6 +259,95 @@ export const ConfigDrawer = ({ config, onClose, onConfigSaved }) => {
               </div>
             </div>
 
+            {/* Target Pivot Levels (R3, R2, S2, S3) */}
+            <div className="p-3.5 rounded-xl bg-dark-950/70 border border-dark-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-gold-400">
+                  Target Price Levels (USD)
+                </h4>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const tickerRes = await api.getTicker();
+                      const tick = tickerRes.data?.data;
+                      if (tick && tick.high24h && tick.low24h && tick.price) {
+                        const h = tick.high24h;
+                        const l = tick.low24h;
+                        const c = tick.price;
+                        const range = h - l;
+                        const p = (h + l + c) / 3;
+                        setFormData(prev => ({
+                          ...prev,
+                          r3: parseFloat((p + 1.000 * range).toFixed(2)),
+                          r2: parseFloat((p + 0.618 * range).toFixed(2)),
+                          s2: parseFloat((p - 0.618 * range).toFixed(2)),
+                          s3: parseFloat((p - 1.000 * range).toFixed(2))
+                        }));
+                      }
+                    } catch (e) {
+                      console.error('Auto calc failed', e);
+                    }
+                  }}
+                  className="px-2 py-1 rounded bg-dark-850 hover:bg-dark-800 text-[10px] font-bold text-gold-400 border border-gold-500/30 flex items-center gap-1 transition-colors"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span>Auto-Calc</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-[11px] font-bold text-amber-400 mb-1">
+                    R3 Resistance
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.r3}
+                    onChange={(e) => handleChange('r3', e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-dark-900 border border-dark-800 text-xs font-mono font-bold text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-orange-400 mb-1">
+                    R2 Resistance
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.r2}
+                    onChange={(e) => handleChange('r2', e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-dark-900 border border-dark-800 text-xs font-mono font-bold text-white focus:outline-none focus:border-orange-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-emerald-400 mb-1">
+                    S2 Support
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.s2}
+                    onChange={(e) => handleChange('s2', e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-dark-900 border border-dark-800 text-xs font-mono font-bold text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-teal-400 mb-1">
+                    S3 Support
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.s3}
+                    onChange={(e) => handleChange('s3', e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-dark-900 border border-dark-800 text-xs font-mono font-bold text-white focus:outline-none focus:border-teal-500"
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Threshold Rules */}
             <div className="p-3.5 rounded-xl bg-dark-950/70 border border-dark-800 space-y-3">
               <h4 className="text-xs font-bold uppercase tracking-wider text-gold-400">
@@ -295,21 +384,6 @@ export const ConfigDrawer = ({ config, onClose, onConfigSaved }) => {
                 <span className="text-[10px] text-slate-500 block mt-0.5">
                   Price must move away by this amount before re-triggering
                 </span>
-              </div>
-            </div>
-
-            {/* Automatic Dynamic Levels Information Banner */}
-            <div className="p-3.5 rounded-xl bg-dark-950/70 border border-dark-800 flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-gold-500/10 text-gold-400 border border-gold-500/20">
-                <Sparkles className="w-4 h-4" />
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-slate-200">
-                  Automatic Dynamic Pivot Engine
-                </h4>
-                <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-                  R3, R2, S2, and S3 levels are automatically synchronized and updated directly from live market movements in real time. Manual entry is disabled.
-                </p>
               </div>
             </div>
 

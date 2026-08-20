@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createChart, ColorType } from 'lightweight-charts';
-import { Maximize2, RefreshCw, BarChart2 } from 'lucide-react';
+import { Maximize2, RefreshCw, BarChart2, ZoomIn, ZoomOut } from 'lucide-react';
 import { api } from '../services/api';
 
 export const InteractiveChart = ({ marketData, config }) => {
@@ -8,9 +8,10 @@ export const InteractiveChart = ({ marketData, config }) => {
   const chartRef = useRef(null);
   const candleSeriesRef = useRef(null);
   const priceLinesRef = useRef([]);
+  const candlesDataRef = useRef([]);
 
   const [isLoading, setIsLoading] = useState(true);
-  const [candleCount, setCandleCount] = useState(100);
+  const [currentBarSpacing, setCurrentBarSpacing] = useState(config?.barSpacing || 18);
 
   // Initialize Chart
   useEffect(() => {
@@ -45,7 +46,11 @@ export const InteractiveChart = ({ marketData, config }) => {
       timeScale: {
         borderColor: '#1e293b',
         timeVisible: true,
-        secondsVisible: false
+        secondsVisible: false,
+        barSpacing: config?.barSpacing || 18,
+        rightOffset: 5,
+        fixLeftEdge: false,
+        fixRightEdge: false
       },
       handleScroll: true,
       handleScale: true
@@ -70,11 +75,12 @@ export const InteractiveChart = ({ marketData, config }) => {
     candleSeriesRef.current = candleSeries;
 
     // Fetch initial historical 5m klines
-    api.getKlines(candleCount)
+    api.getKlines(120)
       .then(res => {
-        if (res.data && res.data.data) {
-          candleSeries.setData(res.data.data);
-          chart.timeScale().fitContent();
+        if (res.data && res.data.data && Array.isArray(res.data.data)) {
+          candlesDataRef.current = [...res.data.data];
+          candleSeries.setData(candlesDataRef.current);
+          chart.timeScale().scrollToRealTime();
         }
       })
       .catch(err => console.error('Failed to load klines', err))
@@ -102,22 +108,61 @@ export const InteractiveChart = ({ marketData, config }) => {
     };
   }, []);
 
-  // Update real-time candle when market price ticks
+  // Sync bar spacing from config
+  useEffect(() => {
+    if (config?.barSpacing && chartRef.current) {
+      setCurrentBarSpacing(config.barSpacing);
+      chartRef.current.timeScale().applyOptions({
+        barSpacing: config.barSpacing
+      });
+    }
+  }, [config?.barSpacing]);
+
+  // Update real-time candle when market price ticks without corrupting OHLC with 24h stats
   useEffect(() => {
     if (!candleSeriesRef.current || !marketData?.price) return;
 
-    const price = marketData.price;
+    const price = parseFloat(marketData.price);
+    if (isNaN(price)) return;
+
     const now = Math.floor(Date.now() / 1000);
-    const candlePeriod = 5 * 60;
+    const candlePeriod = 5 * 60; // 5 minute candles
     const currentCandleTime = Math.floor(now / candlePeriod) * candlePeriod;
 
-    candleSeriesRef.current.update({
-      time: currentCandleTime,
-      open: marketData.open || price,
-      high: Math.max(marketData.high24h || price, price),
-      low: Math.min(marketData.low24h || price, price),
-      close: price
-    });
+    if (candlesDataRef.current.length === 0) {
+      const initialCandle = {
+        time: currentCandleTime,
+        open: price,
+        high: price,
+        low: price,
+        close: price
+      };
+      candlesDataRef.current.push(initialCandle);
+      candleSeriesRef.current.update(initialCandle);
+      return;
+    }
+
+    const lastCandle = candlesDataRef.current[candlesDataRef.current.length - 1];
+
+    if (lastCandle && lastCandle.time === currentCandleTime) {
+      // Update existing 5-minute candle
+      lastCandle.high = Math.max(lastCandle.high, price);
+      lastCandle.low = Math.min(lastCandle.low, price);
+      lastCandle.close = price;
+      candleSeriesRef.current.update(lastCandle);
+    } else {
+      // Start a new 5-minute candle cleanly
+      const newCandle = {
+        time: currentCandleTime,
+        open: lastCandle ? lastCandle.close : price,
+        high: price,
+        low: price,
+        close: price
+      };
+      candlesDataRef.current.push(newCandle);
+      if (candlesDataRef.current.length > 300) candlesDataRef.current.shift();
+      candleSeriesRef.current.update(newCandle);
+    }
   }, [marketData?.price]);
 
   // Update Pivot Price Lines (R3, R2, R1, P, S1, S2, S3)
@@ -135,31 +180,38 @@ export const InteractiveChart = ({ marketData, config }) => {
     const linesToDraw = [
       { price: config.r3, title: 'R3 RESISTANCE', color: '#f59e0b', lineWidth: 2, lineStyle: 2 },
       { price: config.r2, title: 'R2 RESISTANCE', color: '#f97316', lineWidth: 2, lineStyle: 2 },
-      { price: config.r1, title: 'R1', color: '#fbbf24', lineWidth: 1, lineStyle: 3 },
-      { price: config.pivot, title: 'PIVOT', color: '#38bdf8', lineWidth: 1, lineStyle: 1 },
-      { price: config.s1, title: 'S1', color: '#34d399', lineWidth: 1, lineStyle: 3 },
       { price: config.s2, title: 'S2 SUPPORT', color: '#10b981', lineWidth: 2, lineStyle: 2 },
       { price: config.s3, title: 'S3 SUPPORT', color: '#14b8a6', lineWidth: 2, lineStyle: 2 }
     ];
 
     linesToDraw.forEach(item => {
-      if (item.price) {
-        const line = candleSeriesRef.current.createPriceLine({
-          price: item.price,
-          color: item.color,
-          lineWidth: item.lineWidth,
-          lineStyle: item.lineStyle,
-          axisLabelVisible: true,
-          title: item.title
-        });
-        priceLinesRef.current.push(line);
+      if (item.price && !isNaN(item.price)) {
+        try {
+          const line = candleSeriesRef.current.createPriceLine({
+            price: item.price,
+            color: item.color,
+            lineWidth: item.lineWidth,
+            lineStyle: item.lineStyle,
+            axisLabelVisible: true,
+            title: `${item.title} ($${item.price.toFixed(2)})`
+          });
+          priceLinesRef.current.push(line);
+        } catch (e) {}
       }
     });
-  }, [config]);
+  }, [config?.r3, config?.r2, config?.s2, config?.s3]);
+
+  const handleZoom = (delta) => {
+    if (!chartRef.current) return;
+    const newSpacing = Math.min(Math.max(currentBarSpacing + delta, 6), 45);
+    setCurrentBarSpacing(newSpacing);
+    chartRef.current.timeScale().applyOptions({ barSpacing: newSpacing });
+  };
 
   const handleResetView = () => {
     if (chartRef.current) {
-      chartRef.current.timeScale().fitContent();
+      chartRef.current.timeScale().applyOptions({ barSpacing: config?.barSpacing || 18 });
+      chartRef.current.timeScale().scrollToRealTime();
     }
   };
 
@@ -170,22 +222,36 @@ export const InteractiveChart = ({ marketData, config }) => {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <BarChart2 className="w-4 h-4 text-gold-400" />
-            <span className="text-xs font-bold text-slate-200">XAU/USD · 5M TRADINGVIEW CHART</span>
+            <span className="text-xs font-bold text-slate-200">XAU/USD · 5M TRADINGVIEW LIVE CHART</span>
           </div>
           <div className="hidden sm:flex items-center gap-1 text-[11px] text-slate-400 font-mono">
             <span className="px-1.5 py-0.5 rounded bg-dark-950 border border-dark-800">5m Candles</span>
-            <span className="px-1.5 py-0.5 rounded bg-dark-950 border border-dark-800">Floor Pivots</span>
+            <span className="px-1.5 py-0.5 rounded bg-dark-950 border border-dark-800">Spacing: {currentBarSpacing}px</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => handleZoom(-3)}
+            className="p-1.5 rounded-md bg-dark-800 hover:bg-dark-700 text-slate-300 hover:text-white border border-dark-700 transition-colors"
+            title="Zoom Out (Narrower Bars)"
+          >
+            <ZoomOut className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => handleZoom(3)}
+            className="p-1.5 rounded-md bg-dark-800 hover:bg-dark-700 text-slate-300 hover:text-white border border-dark-700 transition-colors"
+            title="Zoom In (Wider Bars)"
+          >
+            <ZoomIn className="w-3.5 h-3.5" />
+          </button>
           <button
             onClick={handleResetView}
             className="flex items-center gap-1 px-2 py-1 rounded-md bg-dark-800 hover:bg-dark-700 text-[11px] text-slate-300 hover:text-white border border-dark-700 transition-colors"
             title="Reset Chart Zoom"
           >
             <RefreshCw className="w-3 h-3" />
-            <span>Reset Zoom</span>
+            <span>Reset</span>
           </button>
         </div>
       </div>
@@ -205,3 +271,4 @@ export const InteractiveChart = ({ marketData, config }) => {
     </div>
   );
 };
+

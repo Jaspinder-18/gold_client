@@ -107,6 +107,11 @@ export function App() {
         if (state.distances) setDistances(state.distances);
         if (state.alertStates) setAlertStates(state.alertStates);
       },
+      onConfigUpdate: (newConfig) => {
+        if (newConfig) {
+          setConfig(newConfig);
+        }
+      },
       onMarketTick: (data) => {
         setMarketData(data);
         if (data.distances) setDistances(data.distances);
