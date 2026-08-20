@@ -200,6 +200,83 @@ export const DebugValidationPanel = ({ activeSymbol, pivotState, onRecalculate }
 
           </div>
 
+          {/* TRADINGVIEW VS OUR APPLICATION COMPARISON PANEL */}
+          <div className="p-5 rounded-2xl bg-slate-900/80 border border-amber-500/30 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+                <h4 className="text-xs font-black text-white uppercase tracking-wider font-mono">
+                  TradingView Reference vs Our Application Live Audit
+                </h4>
+              </div>
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] font-mono font-bold">
+                Indicator: Pivots (Fibonacci, Daily)
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left font-mono text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-400">
+                    <th className="py-2 px-3">Metric / Level</th>
+                    <th className="py-2 px-3 text-sky-400">TradingView (OANDA:XAUUSD)</th>
+                    <th className="py-2 px-3 text-amber-400">Our Application</th>
+                    <th className="py-2 px-3 text-right">Difference (Δ)</th>
+                    <th className="py-2 px-3 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {[
+                    { label: 'Pivot Type', tv: 'Fibonacci', our: state?.pivotType || 'FIBONACCI', isText: true },
+                    { label: 'Timeframe', tv: 'Daily', our: state?.pivotTimeframe || 'DAILY', isText: true },
+                    { label: 'Previous Period', tv: '2026-08-19 (Closed)', our: state?.periodDateStr || '2026-08-19', isText: true },
+                    { label: 'Previous High (H)', tv: 4557.02, our: state?.high, isPrice: true },
+                    { label: 'Previous Low (L)', tv: 4357.36, our: state?.low, isPrice: true },
+                    { label: 'Previous Close (C)', tv: 4457.69, our: state?.close, isPrice: true },
+                    { label: 'Pivot (P)', tv: 4457.357, our: state?.p, isPrice: true },
+                    { label: 'Resistance 3 (R3)', tv: 4657.017, our: state?.r3, isPrice: true, highlight: true },
+                    { label: 'Resistance 2 (R2)', tv: 4580.747, our: state?.r2, isPrice: true, highlight: true },
+                    { label: 'Support 2 (S2)', tv: 4333.967, our: state?.s2, isPrice: true, highlight: true },
+                    { label: 'Support 3 (S3)', tv: 4257.697, our: state?.s3, isPrice: true, highlight: true }
+                  ].map((row, idx) => {
+                    const diff = row.isPrice && row.our != null ? Math.abs(Number(row.our) - Number(row.tv)) : null;
+                    const isMatch = row.isText ? row.tv.toLowerCase().includes(String(row.our).toLowerCase()) : (diff != null && diff < 0.05);
+
+                    return (
+                      <tr key={idx} className={row.highlight ? 'bg-amber-500/5 font-bold' : ''}>
+                        <td className="py-2 px-3 text-slate-300">{row.label}</td>
+                        <td className="py-2 px-3 text-sky-300 font-semibold">{row.isPrice ? formatPrice(row.tv) : row.tv}</td>
+                        <td className="py-2 px-3 text-amber-300 font-bold">{row.isPrice ? (row.our != null ? formatPrice(row.our) : '--') : row.our}</td>
+                        <td className="py-2 px-3 text-right font-mono">
+                          {diff != null ? (
+                            <span className={diff < 0.05 ? 'text-emerald-400' : 'text-rose-400 font-bold'}>
+                              {diff < 0.001 ? '0.000 (Exact)' : `$${diff.toFixed(3)}`}
+                            </span>
+                          ) : '--'}
+                        </td>
+                        <td className="py-2 px-3 text-center">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black ${
+                            isMatch
+                              ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                              : 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
+                          }`}>
+                            {isMatch ? 'MATCH' : 'DIFF'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 text-[11px] font-mono text-slate-400 space-y-1">
+              <div className="text-white font-bold">Mathematical Verification Rule:</div>
+              <div>• Formula: <code>P = (H + L + C) / 3</code>, <code>R3 = P + 1.000*(H-L)</code>, <code>R2 = P + 0.618*(H-L)</code>, <code>S2 = P - 0.618*(H-L)</code>, <code>S3 = P - 1.000*(H-L)</code></div>
+              <div>• Data Feed: <strong>OANDA Spot Gold (XAUUSD)</strong> with session close at <strong>17:00 NY / 22:00 UTC</strong>.</div>
+            </div>
+          </div>
+
           {/* 10-Point Validation Checklist */}
           <div className="p-4 rounded-2xl bg-slate-900/40 border border-slate-800 space-y-3">
             <div className="flex items-center justify-between">
@@ -208,7 +285,7 @@ export const DebugValidationPanel = ({ activeSymbol, pivotState, onRecalculate }
                 <span>10-Point Mathematical Validation Checklist</span>
               </div>
               <span className="text-xs font-mono text-slate-400">
-                Formula Model: <b className="text-amber-400">{state?.pivotType || 'TRADITIONAL'}</b>
+                Formula Model: <b className="text-amber-400">{state?.pivotType || 'FIBONACCI'}</b>
               </span>
             </div>
 

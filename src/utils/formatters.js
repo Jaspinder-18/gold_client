@@ -1,8 +1,10 @@
-export const formatPrice = (price, decimals = 2) => {
+export const formatPrice = (price, decimals = null) => {
   if (price === undefined || price === null || isNaN(price)) return '$0.00';
-  return '$' + Number(price).toLocaleString('en-US', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals
+  const num = Number(price);
+  const dec = decimals !== null ? decimals : (num % 1 !== 0 && (num.toString().split('.')[1]?.length > 2) ? 3 : 2);
+  return '$' + num.toLocaleString('en-US', {
+    minimumFractionDigits: dec,
+    maximumFractionDigits: dec
   });
 };
 
