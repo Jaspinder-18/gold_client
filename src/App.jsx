@@ -26,16 +26,17 @@ export function App() {
   });
 
   const [config, setConfig] = useState({
-    r3: 4473.76,
-    r2: 4432.84,
-    s2: 4300.45,
-    s3: 4259.54,
+    r3: 4657.02,
+    r2: 4580.75,
+    s2: 4333.97,
+    s3: 4257.70,
     tolerance: 0.20,
     retriggerDistance: 1.00,
     enabled: true,
     telegramAlertsEnabled: true,
     chartTimeframe: '5',
     chartRange: '2D',
+    customChartUrl: 'https://www.tradingview.com/chart/hRhqMpmT/?symbol=OANDA%3AXAUUSD',
     monitoredLevels: ['R3', 'R2', 'S2', 'S3']
   });
 

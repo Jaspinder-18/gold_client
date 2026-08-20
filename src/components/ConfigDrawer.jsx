@@ -4,18 +4,18 @@ import { api } from '../services/api';
 
 export const ConfigDrawer = ({ config, onClose, onConfigSaved }) => {
   const [formData, setFormData] = useState({
-    r3: config?.r3 || 4473.76,
-    r2: config?.r2 || 4432.84,
-    s2: config?.s2 || 4300.45,
-    s3: config?.s3 || 4259.54,
-    autoCalculatePivot: config?.autoCalculatePivot !== false,
+    r3: config?.r3 || 4657.02,
+    r2: config?.r2 || 4580.75,
+    s2: config?.s2 || 4333.97,
+    s3: config?.s3 || 4257.70,
+    autoCalculatePivot: config?.autoCalculatePivot || false,
     pivotType: config?.pivotType || 'FIBONACCI',
     tolerance: config?.tolerance || 0.20,
     retriggerDistance: config?.retriggerDistance || 1.00,
     telegramAlertsEnabled: config?.telegramAlertsEnabled !== false,
     enabled: config?.enabled !== false,
     tradingViewTicker: config?.tradingViewTicker || 'OANDA:XAUUSD',
-    customChartUrl: config?.customChartUrl || '',
+    customChartUrl: config?.customChartUrl || 'https://www.tradingview.com/chart/hRhqMpmT/?symbol=OANDA%3AXAUUSD',
     chartTimeframe: config?.chartTimeframe || '5',
     chartRange: config?.chartRange || '2D'
   });
