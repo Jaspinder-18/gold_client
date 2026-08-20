@@ -277,23 +277,69 @@ export const ConfigDrawer = ({ config, onClose, onConfigSaved }) => {
                         const c = tick.price;
                         const range = h - l;
                         const p = (h + l + c) / 3;
+
+                        let r3, r2, s2, s3;
+                        if (formData.pivotType === 'TRADITIONAL' || formData.pivotType === 'CLASSIC') {
+                          r2 = p + range;
+                          s2 = p - range;
+                          r3 = h + 2 * (p - l);
+                          s3 = l - 2 * (h - p);
+                        } else if (formData.pivotType === 'CAMARILLA') {
+                          r3 = c + range * 1.1 / 4;
+                          r2 = c + range * 1.1 / 6;
+                          s2 = c - range * 1.1 / 6;
+                          s3 = c - range * 1.1 / 4;
+                        } else {
+                          r3 = p + 1.000 * range;
+                          r2 = p + 0.618 * range;
+                          s2 = p - 0.618 * range;
+                          s3 = p - 1.000 * range;
+                        }
+
                         setFormData(prev => ({
                           ...prev,
-                          r3: parseFloat((p + 1.000 * range).toFixed(2)),
-                          r2: parseFloat((p + 0.618 * range).toFixed(2)),
-                          s2: parseFloat((p - 0.618 * range).toFixed(2)),
-                          s3: parseFloat((p - 1.000 * range).toFixed(2))
+                          r3: parseFloat(r3.toFixed(2)),
+                          r2: parseFloat(r2.toFixed(2)),
+                          s2: parseFloat(s2.toFixed(2)),
+                          s3: parseFloat(s3.toFixed(2))
                         }));
                       }
                     } catch (e) {
                       console.error('Auto calc failed', e);
                     }
                   }}
-                  className="px-2 py-1 rounded bg-dark-850 hover:bg-dark-800 text-[10px] font-bold text-gold-400 border border-gold-500/30 flex items-center gap-1 transition-colors"
+                  className="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-xs font-bold text-amber-400 border border-amber-500/30 flex items-center gap-1.5 transition-all cursor-pointer"
                 >
-                  <Sparkles className="w-3 h-3" />
+                  <Sparkles className="w-3.5 h-3.5" />
                   <span>Auto-Calc</span>
                 </button>
+              </div>
+
+              {/* Pivot Formula Type Selector */}
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                  Pivot Calculation Formula
+                </label>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {[
+                    { id: 'FIBONACCI', label: 'Fibonacci' },
+                    { id: 'TRADITIONAL', label: 'Traditional' },
+                    { id: 'CAMARILLA', label: 'Camarilla' }
+                  ].map(pt => (
+                    <button
+                      key={pt.id}
+                      type="button"
+                      onClick={() => handleChange('pivotType', pt.id)}
+                      className={`py-1.5 px-2 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+                        formData.pivotType === pt.id
+                          ? 'bg-amber-400 text-slate-950 font-black shadow-md shadow-amber-500/20'
+                          : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white'
+                      }`}
+                    >
+                      {pt.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">
