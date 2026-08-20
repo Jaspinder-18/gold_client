@@ -28,7 +28,7 @@ export const LivePriceCard = ({
   const changePercent = marketData?.changePercent || 0;
   const isPositive = change >= 0;
 
-  // 'up' = Red (bullish in inverted scheme), 'down' = Green (bearish in inverted scheme)
+  // 'up' = Green (bullish), 'down' = Red (bearish)
   const [tickDirection, setTickDirection] = useState('up');
   const prevPriceRef = useRef(price);
 
@@ -72,7 +72,7 @@ export const LivePriceCard = ({
           </div>
         </div>
 
-        {/* Big Live Price Ticker: UP = RED, DOWN = GREEN */}
+        {/* Big Live Price Ticker: UP = GREEN, DOWN = RED */}
         <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-3">
           <div>
             <div className="flex items-baseline gap-2">
@@ -81,30 +81,30 @@ export const LivePriceCard = ({
             </div>
 
             <div className="mt-1 flex items-baseline gap-3">
-              {/* Live Price Display: Up -> Red, Down -> Green */}
+              {/* Live Price Display: Up -> Green, Down -> Red */}
               <div className={`text-4xl sm:text-5xl font-black font-mono tracking-tight transition-colors duration-150 flex items-baseline ${
                 tickDirection === 'up'
-                  ? 'text-rose-400 drop-shadow-[0_0_18px_rgba(248,113,113,0.9)]'
-                  : 'text-emerald-400 drop-shadow-[0_0_18px_rgba(52,211,153,0.9)]'
+                  ? 'text-emerald-400 drop-shadow-[0_0_18px_rgba(52,211,153,0.9)]'
+                  : 'text-rose-400 drop-shadow-[0_0_18px_rgba(248,113,113,0.9)]'
               }`}>
                 <span>${Number(dollars).toLocaleString()}</span>
                 <span className="text-3xl sm:text-4xl">.{cents}</span>
                 {tickDirection === 'up' ? (
-                  <span className="ml-2 text-xs font-bold font-mono text-rose-400 bg-rose-500/20 border border-rose-500/30 px-2 py-0.5 rounded-md animate-pulse">
+                  <span className="ml-2 text-xs font-bold font-mono text-emerald-400 bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 rounded-md animate-pulse">
                     ▲ UP
                   </span>
                 ) : (
-                  <span className="ml-2 text-xs font-bold font-mono text-emerald-400 bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 rounded-md animate-pulse">
+                  <span className="ml-2 text-xs font-bold font-mono text-rose-400 bg-rose-500/20 border border-rose-500/30 px-2 py-0.5 rounded-md animate-pulse">
                     ▼ DOWN
                   </span>
                 )}
               </div>
 
-              {/* 24h Change: Up (+) -> Red, Down (-) -> Green */}
+              {/* 24h Change: Up (+) -> Green, Down (-) -> Red */}
               <div className={`flex items-center gap-0.5 px-2 py-1 rounded-md text-xs font-mono font-bold border ${
                 isPositive
-                  ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
-                  : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                  : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
               }`}>
                 {isPositive ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
                 <span>{isPositive ? '+' : ''}{formatNumber(change)}</span>

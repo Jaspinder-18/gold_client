@@ -45,6 +45,7 @@ export function App() {
   const [systemHealth, setSystemHealth] = useState(null);
   const [isSocketConnected, setIsSocketConnected] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [isAutoCalculating, setIsAutoCalculating] = useState(false);
 
   // Modals & Drawers state
   const [selectedAlertForModal, setSelectedAlertForModal] = useState(null);
@@ -206,6 +207,21 @@ export function App() {
     }
   };
 
+  // Live auto-calculate Fibonacci levels from current market data
+  const handleAutoCalculatePivots = async () => {
+    setIsAutoCalculating(true);
+    try {
+      const res = await api.autoCalculatePivots();
+      if (res.data?.data) {
+        setConfig(res.data.data);
+      }
+    } catch (err) {
+      console.error('Failed to auto-calculate pivot levels', err);
+    } finally {
+      setIsAutoCalculating(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-dark-950 text-slate-100 flex flex-col selection:bg-gold-500 selection:text-black">
       
@@ -243,6 +259,8 @@ export function App() {
               config={config}
               alertStates={alertStates}
               currentPrice={marketData?.price || 4345.50}
+              onAutoCalc={handleAutoCalculatePivots}
+              isAutoCalculating={isAutoCalculating}
             />
           </div>
 

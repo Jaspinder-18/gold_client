@@ -1,8 +1,8 @@
 import React from 'react';
-import { Target, ShieldAlert, CheckCircle, Clock } from 'lucide-react';
+import { Target, ShieldAlert, CheckCircle, Clock, Sparkles, RefreshCw } from 'lucide-react';
 import { formatPrice } from '../utils/formatters';
 
-export const PivotLevelsGrid = ({ config, alertStates, currentPrice }) => {
+export const PivotLevelsGrid = ({ config, alertStates, currentPrice, onAutoCalc, isAutoCalculating }) => {
   // Strictly only the 4 levels: R3, R2, S2, S3
   const levels = [
     { key: 'r3', name: 'R3', label: 'Resistance 3', price: config?.r3 || 4473.76, type: 'RESISTANCE' },
@@ -15,12 +15,28 @@ export const PivotLevelsGrid = ({ config, alertStates, currentPrice }) => {
     <div className="h-full flex flex-col justify-between rounded-2xl bg-dark-900 border border-dark-700/80 p-5 shadow-2xl">
       
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
           <Target className="w-4 h-4 text-yellow-400" />
           <h3 className="text-sm font-bold text-white uppercase tracking-wider">
             Target Levels (R3, R2, S2, S3)
           </h3>
+          {onAutoCalc && (
+            <button
+              type="button"
+              onClick={onAutoCalc}
+              disabled={isAutoCalculating}
+              title="Recalculate Fibonacci levels live from current market prices"
+              className="ml-1 px-2 py-0.5 rounded-md bg-gold-500/20 hover:bg-gold-500/30 text-[10px] font-bold text-gold-400 border border-gold-500/40 flex items-center gap-1 transition-all active:scale-95 disabled:opacity-50"
+            >
+              {isAutoCalculating ? (
+                <RefreshCw className="w-3 h-3 animate-spin" />
+              ) : (
+                <Sparkles className="w-3 h-3 text-gold-400" />
+              )}
+              <span>{isAutoCalculating ? 'Calc...' : 'Auto-Calc'}</span>
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2 text-[10px] font-mono">
           <span className="flex items-center gap-1 text-yellow-400">
