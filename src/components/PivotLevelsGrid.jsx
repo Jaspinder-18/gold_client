@@ -1,60 +1,83 @@
 import React from 'react';
-import { Target, ShieldAlert, CheckCircle, Clock, Sparkles, RefreshCw } from 'lucide-react';
+import { Target, ShieldAlert, CheckCircle, Clock, Sparkles, RefreshCw, Calendar, History, ArrowRight } from 'lucide-react';
 import { formatPrice } from '../utils/formatters';
 
-export const PivotLevelsGrid = ({ config, alertStates, currentPrice, onAutoCalc, isAutoCalculating }) => {
+export const PivotLevelsGrid = ({ config, pivotState, alertStates, currentPrice, onAutoCalc, isAutoCalculating }) => {
   // Strictly only the 4 levels: R3, R2, S2, S3
   const levels = [
-    { key: 'r3', name: 'R3', label: 'Resistance 3', price: config?.r3 || 4657.02, type: 'RESISTANCE' },
-    { key: 'r2', name: 'R2', label: 'Resistance 2', price: config?.r2 || 4580.75, type: 'RESISTANCE' },
-    { key: 's2', name: 'S2', label: 'Support 2', price: config?.s2 || 4333.97, type: 'SUPPORT' },
-    { key: 's3', name: 'S3', label: 'Support 3', price: config?.s3 || 4257.70, type: 'SUPPORT' }
+    { key: 'r3', name: 'R3', label: 'Resistance 3', price: pivotState?.r3 ?? config?.r3 ?? 4657.02, type: 'RESISTANCE' },
+    { key: 'r2', name: 'R2', label: 'Resistance 2', price: pivotState?.r2 ?? config?.r2 ?? 4580.75, type: 'RESISTANCE' },
+    { key: 's2', name: 'S2', label: 'Support 2', price: pivotState?.s2 ?? config?.s2 ?? 4333.97, type: 'SUPPORT' },
+    { key: 's3', name: 'S3', label: 'Support 3', price: pivotState?.s3 ?? config?.s3 ?? 4257.70, type: 'SUPPORT' }
   ];
+
+  const prev = pivotState?.previousLevels;
+  const currentPeriodStr = pivotState?.pivotPeriod || pivotState?.periodDateStr || 'Today';
 
   return (
     <div className="h-full flex flex-col justify-between rounded-3xl glass-panel p-6 shadow-2xl relative overflow-hidden">
       {/* Subtle top-right ambient gold flare */}
       <div className="absolute -top-20 -right-20 w-48 h-48 rounded-full bg-amber-500/10 blur-3xl pointer-events-none"></div>
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center border border-amber-500/30">
-            <Target className="w-4 h-4 text-amber-400" />
+      {/* Header with Active Pivot Period & Rollover Info */}
+      <div className="space-y-3 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center border border-amber-500/30">
+              <Target className="w-4 h-4 text-amber-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-white uppercase tracking-wider">
+                Target Levels (R3, R2, S2, S3)
+              </h3>
+            </div>
+            {onAutoCalc && (
+              <button
+                type="button"
+                onClick={onAutoCalc}
+                disabled={isAutoCalculating}
+                title="Force recalculate from verified completed OHLC"
+                className="ml-2 px-3 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-xs font-black text-amber-400 border border-amber-500/40 flex items-center gap-1.5 transition-all duration-200 active:scale-95 disabled:opacity-50 cursor-pointer shadow-sm"
+              >
+                {isAutoCalculating ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                )}
+                <span>{isAutoCalculating ? 'Recalculating...' : 'Recalculate'}</span>
+              </button>
+            )}
           </div>
-          <h3 className="text-sm font-black text-white uppercase tracking-wider">
-            Target Levels (R3, R2, S2, S3)
-          </h3>
-          {onAutoCalc && (
-            <button
-              type="button"
-              onClick={onAutoCalc}
-              disabled={isAutoCalculating}
-              title="Recalculate Fibonacci levels live from current market prices"
-              className="ml-2 px-3 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-xs font-black text-amber-400 border border-amber-500/40 flex items-center gap-1.5 transition-all duration-200 active:scale-95 disabled:opacity-50 cursor-pointer shadow-sm"
-            >
-              {isAutoCalculating ? (
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              )}
-              <span>{isAutoCalculating ? 'Calculating...' : 'Auto-Calc'}</span>
-            </button>
-          )}
+
+          <div className="flex items-center gap-2 text-xs font-mono">
+            <span className="flex items-center gap-1.5 text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20">
+              <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+              Ready
+            </span>
+            <span className="flex items-center gap-1.5 text-rose-300 font-black px-2 py-0.5 rounded-md bg-rose-500/15 border border-rose-500/30">
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+              Touched
+            </span>
+            <span className="flex items-center gap-1.5 text-blue-300 font-bold px-2 py-0.5 rounded-md bg-blue-500/15 border border-blue-500/25">
+              <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+              Previous
+            </span>
+          </div>
         </div>
-        <div className="flex items-center gap-3 text-xs font-mono">
-          <span className="flex items-center gap-1.5 text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20">
-            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-            Ready
-          </span>
-          <span className="flex items-center gap-1.5 text-rose-300 font-black px-2 py-0.5 rounded-md bg-rose-500/15 border border-rose-500/30">
-            <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
-            Touched
-          </span>
-          <span className="flex items-center gap-1.5 text-blue-300 font-bold px-2 py-0.5 rounded-md bg-blue-500/15 border border-blue-500/25">
-            <span className="w-2 h-2 rounded-full bg-blue-400"></span>
-            Previous
-          </span>
+
+        {/* Pivot Period Meta Banner */}
+        <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 rounded-xl bg-slate-900/80 border border-slate-800 text-xs font-mono">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-3.5 h-3.5 text-amber-400" />
+            <span className="text-slate-400">PIVOT PERIOD:</span>
+            <span className="text-white font-black">{currentPeriodStr}</span>
+            <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/30">
+              ACTIVE
+            </span>
+          </div>
+          <div className="flex items-center gap-3 text-slate-400 text-[11px]">
+            <span>Next Rollover: <strong className="text-amber-400">{pivotState?.nextRolloverAt ? new Date(pivotState.nextRolloverAt).toUTCString().slice(17, 22) + ' UTC' : '22:00 UTC'}</strong></span>
+          </div>
         </div>
       </div>
 
@@ -156,6 +179,22 @@ export const PivotLevelsGrid = ({ config, alertStates, currentPrice, onAutoCalc,
           );
         })}
       </div>
+
+      {/* Previous Period Historical Reference Comparison (if available) */}
+      {prev && (
+        <div className="mt-3.5 pt-3 border-t border-slate-800/80 flex items-center justify-between px-3 py-2 rounded-xl bg-slate-900/40 text-[11px] font-mono text-slate-400">
+          <div className="flex items-center gap-1.5 text-slate-300">
+            <History className="w-3 h-3 text-blue-400" />
+            <span className="font-bold">PREV PERIOD ({prev.periodDateStr || 'Yesterday'}):</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span>R3: <strong className="text-slate-200">{formatPrice(prev.r3)}</strong></span>
+            <span>R2: <strong className="text-slate-200">{formatPrice(prev.r2)}</strong></span>
+            <span>S2: <strong className="text-slate-200">{formatPrice(prev.s2)}</strong></span>
+            <span>S3: <strong className="text-slate-200">{formatPrice(prev.s3)}</strong></span>
+          </div>
+        </div>
+      )}
 
     </div>
   );

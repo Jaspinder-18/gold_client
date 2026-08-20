@@ -126,6 +126,31 @@ export function App() {
       onPivotState: (state) => {
         if (state) setPivotState(state);
       },
+      onPivotUpdated: (data) => {
+        if (data) {
+          setPivotState(data);
+          setConfig(prev => ({
+            ...prev,
+            r3: data.r3,
+            r2: data.r2,
+            s2: data.s2,
+            s3: data.s3,
+            p: data.p,
+            r1: data.r1,
+            s1: data.s1
+          }));
+          // Reset alert states to READY immediately for the new pivot period
+          setAlertStates({
+            R3: { status: 'READY' },
+            R2: { status: 'READY' },
+            R1: { status: 'READY' },
+            PIVOT: { status: 'READY' },
+            S1: { status: 'READY' },
+            S2: { status: 'READY' },
+            S3: { status: 'READY' }
+          });
+        }
+      },
       onConfigUpdate: (newConfig) => {
         if (newConfig) setConfig(newConfig);
       },
@@ -293,13 +318,8 @@ export function App() {
           {/* Right Side: R3, R2, S2, S3 Levels */}
           <div className="h-full">
             <PivotLevelsGrid
-              config={{
-                ...config,
-                r3: pivotState?.r3 ?? config.r3,
-                r2: pivotState?.r2 ?? config.r2,
-                s2: pivotState?.s2 ?? config.s2,
-                s3: pivotState?.s3 ?? config.s3
-              }}
+              config={config}
+              pivotState={pivotState}
               alertStates={alertStates}
               currentPrice={marketData?.price}
               onAutoCalc={handleAutoCalculatePivots}

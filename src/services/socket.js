@@ -41,6 +41,12 @@ export const initSocketListeners = (callbacks = {}) => {
   const handlePivotState = (data) => callbacks.onPivotState && callbacks.onPivotState(data);
   socket.on('pivot:state', handlePivotState);
 
+  const handlePivotUpdated = (data) => {
+    if (callbacks.onPivotUpdated) callbacks.onPivotUpdated(data);
+    if (callbacks.onPivotState) callbacks.onPivotState(data);
+  };
+  socket.on('pivotUpdated', handlePivotUpdated);
+
   // If already connected when listeners are registered
   if (socket.connected && callbacks.onConnect) {
     callbacks.onConnect();
@@ -59,5 +65,6 @@ export const initSocketListeners = (callbacks = {}) => {
     socket.off('alert_triggered', handleAlert);
     socket.off('symbol:active', handleSymbolActive);
     socket.off('pivot:state', handlePivotState);
+    socket.off('pivotUpdated', handlePivotUpdated);
   };
 };
