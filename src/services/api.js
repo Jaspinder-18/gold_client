@@ -22,6 +22,7 @@ export const api = {
   getConfig: () => axios.get(`${API_BASE}/config`),
   updateConfig: (data) => axios.put(`${API_BASE}/config`, data),
   calculatePivots: (data) => axios.post(`${API_BASE}/config/calculate`, data),
+  autoCalculatePivots: () => axios.post(`${API_BASE}/config/auto-calculate`),
   getPivotHistory: () => axios.get(`${API_BASE}/config/history`),
 
   // Test & On-demand capture with dynamic timeframe & range
