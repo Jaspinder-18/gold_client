@@ -1,42 +1,55 @@
 import React from 'react';
-import { Activity, Radio, ShieldCheck, Send, Database, Sliders, PlayCircle } from 'lucide-react';
+import { Activity, Radio, ShieldCheck, Send, Database, Sliders, PlayCircle, Search, ChevronDown } from 'lucide-react';
 
 export const HeaderStatus = ({
+  activeSymbol = 'XAUUSD',
+  symbolConfig = {},
   systemHealth,
   isSocketConnected,
+  onOpenSymbolSearch,
   onOpenTestConsole,
   onOpenSettings
 }) => {
   const marketFeed = systemHealth?.marketFeed || {};
   const tg = systemHealth?.telegram || {};
-  const db = systemHealth?.database || {};
-  const alertEngine = systemHealth?.alertEngine || {};
 
   return (
     <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl sticky top-0 z-40 px-4 lg:px-8 py-3.5 shadow-2xl">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         
-        {/* Brand & Market Identity */}
+        {/* Brand & Market Identity + Symbol Switcher Button */}
         <div className="flex items-center gap-3.5">
           <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 via-amber-500 to-yellow-600 flex items-center justify-center shadow-lg shadow-amber-500/25 ring-2 ring-amber-400/40 transform hover:scale-105 transition-all duration-300">
             <Activity className="w-6 h-6 text-slate-950 font-black stroke-[2.8]" />
           </div>
           <div>
             <div className="flex items-center gap-2.5">
-              <h1 className="text-xl font-black tracking-tight text-white flex items-center gap-2">
-                GOLD <span className="text-amber-400 font-mono tracking-wider font-extrabold">XAU/USD</span>
-                <span className="text-xs text-slate-400 font-medium px-2 py-0.5 rounded-md bg-slate-900/80 border border-slate-800">TERMINAL</span>
-              </h1>
+              <button
+                type="button"
+                onClick={onOpenSymbolSearch}
+                className="flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-900/90 hover:bg-slate-850 border border-slate-800 hover:border-amber-400/60 transition-all cursor-pointer group"
+                title="Click to search and change trading symbol"
+              >
+                <Search className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
+                <span className="text-base font-black text-white font-mono">{activeSymbol}</span>
+                <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  {symbolConfig?.assetType || 'ASSET'}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-white" />
+              </button>
+
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
                 <span className="w-1.5 h-1.5 -ml-3.5 rounded-full bg-emerald-400"></span>
                 LIVE
               </span>
             </div>
-            <p className="text-xs text-slate-400 flex items-center gap-2 mt-0.5 font-medium">
-              <span className="text-slate-300">TradingView Multi-Feed</span>
+            <p className="text-xs text-slate-400 flex items-center gap-2 mt-1 font-medium">
+              <span className="text-slate-300 font-semibold">{symbolConfig?.displayName || 'Multi-Asset Stream'}</span>
               <span className="text-amber-500/50">•</span>
-              <span className="text-amber-400/90 font-semibold">R3 · R2 · S2 · S3 Pivot Engine</span>
+              <span className="text-slate-400 font-mono text-[11px]">{symbolConfig?.exchange || 'OANDA'}</span>
+              <span className="text-amber-500/50">•</span>
+              <span className="text-amber-400/90 font-semibold">Dynamic Pivot Levels</span>
             </p>
           </div>
         </div>

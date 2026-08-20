@@ -25,6 +25,13 @@ export const api = {
   autoCalculatePivots: () => axios.post(`${API_BASE}/config/auto-calculate`),
   getPivotHistory: () => axios.get(`${API_BASE}/config/history`),
 
+  // Symbol endpoints
+  getSymbols: (assetType = 'ALL') => axios.get(`${API_BASE}/symbols?assetType=${assetType}`),
+  searchSymbols: (q = '', assetType = 'ALL') => axios.get(`${API_BASE}/symbols/search`, { params: { q, assetType } }),
+  getActiveSymbol: () => axios.get(`${API_BASE}/symbols/active`),
+  setActiveSymbol: (symbol) => axios.post(`${API_BASE}/symbols/active`, { symbol }),
+  validatePivot: (symbol) => axios.get(`${API_BASE}/symbols/validate/${symbol || ''}`),
+
   // Test & On-demand capture with dynamic timeframe & range
   triggerTestAlert: (level, price) => axios.post(`${API_BASE}/test/trigger-alert`, { level, price }),
   captureScreenshot: (params = {}) => {

@@ -69,17 +69,17 @@ export const LivePriceCard = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="text-xs font-black uppercase tracking-wider text-amber-400 font-mono px-2.5 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/25">
-              Live Commodity Spot
+              {marketData?.assetType || 'ASSET'}
             </span>
             <span className="text-slate-600">•</span>
-            <span className="text-xs text-slate-400 font-medium">
-              TradingView OANDA:XAUUSD
+            <span className="text-xs text-slate-400 font-medium truncate max-w-[200px]">
+              {marketData?.provider || 'TradingView Live Stream'}
             </span>
           </div>
 
           <div className="flex items-center gap-2 text-xs font-mono text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/30 shadow-sm">
             <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400 animate-pulse" />
-            <span className="font-extrabold tracking-wide">LIVE STREAM</span>
+            <span className="font-extrabold tracking-wide">{marketData?.marketStatus || 'LIVE'}</span>
           </div>
         </div>
 
@@ -87,8 +87,8 @@ export const LivePriceCard = ({
         <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4">
           <div>
             <div className="flex items-baseline gap-2.5">
-              <h2 className="text-2xl font-black text-white tracking-tight">GOLD / USD</h2>
-              <span className="text-xs font-mono text-slate-400 font-bold px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800">XAUUSD</span>
+              <h2 className="text-2xl font-black text-white tracking-tight">{marketData?.displayName || marketData?.symbol || 'GOLD / USD'}</h2>
+              <span className="text-xs font-mono text-slate-400 font-bold px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800">{marketData?.rawSymbol || 'XAUUSD'}</span>
             </div>
 
             <div className="mt-2 flex flex-wrap items-baseline gap-3">
@@ -98,20 +98,20 @@ export const LivePriceCard = ({
                   ? 'text-emerald-400 drop-shadow-[0_0_25px_rgba(52,211,153,0.6)]'
                   : 'text-rose-400 drop-shadow-[0_0_25px_rgba(248,113,113,0.6)]'
               }`}>
-                <span>{price ? `$${Number(dollars).toLocaleString()}` : '$----'}</span>
-                <span className="text-3xl sm:text-4xl">.{cents}</span>
-                {price && (
-                  tickDirection === 'up' ? (
-                    <span className="ml-2.5 text-xs font-black font-mono text-emerald-300 bg-emerald-500/20 border border-emerald-500/40 px-2.5 py-1 rounded-lg shadow-sm animate-pulse flex items-center gap-1">
-                      ▲ TICK UP
-                    </span>
-                  ) : (
-                    <span className="ml-2.5 text-xs font-black font-mono text-rose-300 bg-rose-500/20 border border-rose-500/40 px-2.5 py-1 rounded-lg shadow-sm animate-pulse flex items-center gap-1">
-                      ▼ TICK DOWN
-                    </span>
-                  )
-                )}
+                {price != null ? `$${price}` : 'FETCHING...'}
               </div>
+
+              {price && (
+                tickDirection === 'up' ? (
+                  <span className="ml-2.5 text-xs font-black font-mono text-emerald-300 bg-emerald-500/20 border border-emerald-500/40 px-2.5 py-1 rounded-lg shadow-sm animate-pulse flex items-center gap-1">
+                    ▲ TICK UP
+                  </span>
+                ) : (
+                  <span className="ml-2.5 text-xs font-black font-mono text-rose-300 bg-rose-500/20 border border-rose-500/40 px-2.5 py-1 rounded-lg shadow-sm animate-pulse flex items-center gap-1">
+                    ▼ TICK DOWN
+                  </span>
+                )
+              )}
 
               {/* 24h Change Badge */}
               <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-black border shadow-md transition-all ${
@@ -131,7 +131,7 @@ export const LivePriceCard = ({
               <span className="text-slate-700">|</span>
               <span>Ask: <strong className="text-slate-200">${formatNumber(marketData?.ask || (price ? price + 0.25 : 0), 2)}</strong></span>
               <span className="text-slate-700">|</span>
-              <span>Spread: <strong className="text-amber-400 font-bold">$0.50</strong></span>
+              <span>Spread: <strong className="text-amber-400 font-bold">${formatNumber(Math.abs((marketData?.ask || 0) - (marketData?.bid || 0)) || 0.50, 2)}</strong></span>
             </div>
           </div>
 

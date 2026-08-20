@@ -18,10 +18,28 @@ export const socket = io(SOCKET_URL, {
 export const initSocketListeners = (callbacks = {}) => {
   if (callbacks.onConnect) socket.on('connect', callbacks.onConnect);
   if (callbacks.onDisconnect) socket.on('disconnect', callbacks.onDisconnect);
-  if (callbacks.onInitialState) socket.on('initial_state', callbacks.onInitialState);
-  if (callbacks.onConfigUpdate) socket.on('config_updated', callbacks.onConfigUpdate);
-  if (callbacks.onMarketTick) socket.on('market_tick', callbacks.onMarketTick);
-  if (callbacks.onAlertTriggered) socket.on('alert_triggered', callbacks.onAlertTriggered);
+  
+  const handleInitial = (state) => callbacks.onInitialState && callbacks.onInitialState(state);
+  socket.on('initial:state', handleInitial);
+  socket.on('initial_state', handleInitial);
+
+  const handleConfig = (cfg) => callbacks.onConfigUpdate && callbacks.onConfigUpdate(cfg);
+  socket.on('config:update', handleConfig);
+  socket.on('config_updated', handleConfig);
+
+  const handleTick = (data) => callbacks.onMarketTick && callbacks.onMarketTick(data);
+  socket.on('market:tick', handleTick);
+  socket.on('market_tick', handleTick);
+
+  const handleAlert = (payload) => callbacks.onAlertTriggered && callbacks.onAlertTriggered(payload);
+  socket.on('alert:triggered', handleAlert);
+  socket.on('alert_triggered', handleAlert);
+
+  const handleSymbolActive = (data) => callbacks.onSymbolActive && callbacks.onSymbolActive(data);
+  socket.on('symbol:active', handleSymbolActive);
+
+  const handlePivotState = (data) => callbacks.onPivotState && callbacks.onPivotState(data);
+  socket.on('pivot:state', handlePivotState);
 
   // If already connected when listeners are registered
   if (socket.connected && callbacks.onConnect) {
@@ -31,9 +49,15 @@ export const initSocketListeners = (callbacks = {}) => {
   return () => {
     if (callbacks.onConnect) socket.off('connect', callbacks.onConnect);
     if (callbacks.onDisconnect) socket.off('disconnect', callbacks.onDisconnect);
-    if (callbacks.onInitialState) socket.off('initial_state', callbacks.onInitialState);
-    if (callbacks.onConfigUpdate) socket.off('config_updated', callbacks.onConfigUpdate);
-    if (callbacks.onMarketTick) socket.off('market_tick', callbacks.onMarketTick);
-    if (callbacks.onAlertTriggered) socket.off('alert_triggered', callbacks.onAlertTriggered);
+    socket.off('initial:state', handleInitial);
+    socket.off('initial_state', handleInitial);
+    socket.off('config:update', handleConfig);
+    socket.off('config_updated', handleConfig);
+    socket.off('market:tick', handleTick);
+    socket.off('market_tick', handleTick);
+    socket.off('alert:triggered', handleAlert);
+    socket.off('alert_triggered', handleAlert);
+    socket.off('symbol:active', handleSymbolActive);
+    socket.off('pivot:state', handlePivotState);
   };
 };
