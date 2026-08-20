@@ -13,28 +13,30 @@ export const HeaderStatus = ({
   const alertEngine = systemHealth?.alertEngine || {};
 
   return (
-    <header className="border-b border-dark-800 bg-dark-900/90 backdrop-blur-md sticky top-0 z-40 px-4 lg:px-6 py-3">
+    <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl sticky top-0 z-40 px-4 lg:px-8 py-3.5 shadow-2xl">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         
         {/* Brand & Market Identity */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gold-500 to-amber-600 flex items-center justify-center shadow-lg shadow-gold-500/20 ring-1 ring-gold-400/40">
-            <Activity className="w-6 h-6 text-black font-extrabold stroke-[2.5]" />
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 via-amber-500 to-yellow-600 flex items-center justify-center shadow-lg shadow-amber-500/25 ring-2 ring-amber-400/40 transform hover:scale-105 transition-all duration-300">
+            <Activity className="w-6 h-6 text-slate-950 font-black stroke-[2.8]" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-extrabold tracking-tight text-white flex items-center gap-1.5">
-                GOLD <span className="text-gold-400 font-mono">XAU/USD</span> TERMINAL
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-xl font-black tracking-tight text-white flex items-center gap-2">
+                GOLD <span className="text-amber-400 font-mono tracking-wider font-extrabold">XAU/USD</span>
+                <span className="text-xs text-slate-400 font-medium px-2 py-0.5 rounded-md bg-slate-900/80 border border-slate-800">TERMINAL</span>
               </h1>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                <span className="w-1.5 h-1.5 -ml-3.5 rounded-full bg-emerald-400"></span>
                 LIVE
               </span>
             </div>
-            <p className="text-xs text-slate-400 flex items-center gap-1.5">
-              <span>TradingView Feed</span>
-              <span>•</span>
-              <span>R3 · R2 · S2 · S3 Pivot Engine</span>
+            <p className="text-xs text-slate-400 flex items-center gap-2 mt-0.5 font-medium">
+              <span className="text-slate-300">TradingView Multi-Feed</span>
+              <span className="text-amber-500/50">•</span>
+              <span className="text-amber-400/90 font-semibold">R3 · R2 · S2 · S3 Pivot Engine</span>
             </p>
           </div>
         </div>
@@ -43,9 +45,9 @@ export const HeaderStatus = ({
         <div className="flex flex-wrap items-center gap-2 text-xs">
           
           {/* Market Feed Status */}
-          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-medium ${
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border font-semibold transition-all duration-300 ${
             marketFeed.connected
-              ? 'bg-dark-850 text-slate-200 border-dark-700'
+              ? 'bg-slate-900/80 text-emerald-300 border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.1)]'
               : 'bg-rose-950/40 text-rose-300 border-rose-800/60'
           }`}>
             <span className={`w-2 h-2 rounded-full ${marketFeed.connected ? 'bg-emerald-400 shadow-[0_0_8px_#10b981]' : 'bg-rose-500'}`}></span>
@@ -53,9 +55,9 @@ export const HeaderStatus = ({
           </div>
 
           {/* WebSocket Status */}
-          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-medium ${
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border font-semibold transition-all duration-300 ${
             isSocketConnected
-              ? 'bg-dark-850 text-slate-200 border-dark-700'
+              ? 'bg-slate-900/80 text-slate-200 border-slate-700/80'
               : 'bg-rose-950/40 text-rose-300 border-rose-800/60'
           }`}>
             <Radio className={`w-3.5 h-3.5 ${isSocketConnected ? 'text-emerald-400' : 'text-rose-400'}`} />
@@ -63,15 +65,15 @@ export const HeaderStatus = ({
           </div>
 
           {/* Alert Engine Status */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-dark-850 text-slate-200 border border-dark-700 font-medium">
-            <ShieldCheck className="w-3.5 h-3.5 text-gold-400" />
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/80 text-slate-200 border border-slate-700/80 font-semibold">
+            <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
             <span>Alert Engine</span>
           </div>
 
           {/* Telegram Status */}
-          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-medium ${
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border font-semibold ${
             tg.connected !== false
-              ? 'bg-dark-850 text-slate-200 border-dark-700'
+              ? 'bg-slate-900/80 text-slate-200 border-slate-700/80'
               : 'bg-amber-950/40 text-amber-300 border-amber-800/60'
           }`} title={tg.botUsername ? `@${tg.botUsername}` : 'Telegram Bot'}>
             <Send className="w-3.5 h-3.5 text-sky-400" />
@@ -79,24 +81,24 @@ export const HeaderStatus = ({
           </div>
 
           {/* Database Status */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-dark-850 text-slate-200 border border-dark-700 font-medium">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/80 text-slate-200 border border-slate-700/80 font-semibold">
             <Database className="w-3.5 h-3.5 text-purple-400" />
             <span>MongoDB</span>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2 ml-1">
+          <div className="flex items-center gap-2 ml-1.5">
             <button
               onClick={onOpenTestConsole}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gold-500 hover:bg-gold-400 text-black font-bold transition-all shadow-md shadow-gold-500/20 active:scale-95"
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-extrabold transition-all duration-200 shadow-lg shadow-amber-500/25 active:scale-95 cursor-pointer"
             >
-              <PlayCircle className="w-4 h-4" />
+              <PlayCircle className="w-4 h-4 text-slate-950 stroke-[2.5]" />
               <span>Test Alert</span>
             </button>
 
             <button
               onClick={onOpenSettings}
-              className="p-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 text-slate-300 hover:text-white border border-dark-700 transition-colors"
+              className="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 hover:border-amber-500/40 transition-all duration-200 shadow-sm cursor-pointer active:scale-95"
               title="System Configuration"
             >
               <Sliders className="w-4 h-4" />
