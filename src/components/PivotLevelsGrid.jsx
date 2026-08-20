@@ -5,10 +5,10 @@ import { formatPrice } from '../utils/formatters';
 export const PivotLevelsGrid = ({ config, pivotState, alertStates, currentPrice, onAutoCalc, isAutoCalculating }) => {
   // Strictly only the 4 levels: R3, R2, S2, S3
   const levels = [
-    { key: 'r3', name: 'R3', label: 'Resistance 3', price: pivotState?.r3 ?? config?.r3 ?? 4657.02, type: 'RESISTANCE' },
-    { key: 'r2', name: 'R2', label: 'Resistance 2', price: pivotState?.r2 ?? config?.r2 ?? 4580.75, type: 'RESISTANCE' },
-    { key: 's2', name: 'S2', label: 'Support 2', price: pivotState?.s2 ?? config?.s2 ?? 4333.97, type: 'SUPPORT' },
-    { key: 's3', name: 'S3', label: 'Support 3', price: pivotState?.s3 ?? config?.s3 ?? 4257.70, type: 'SUPPORT' }
+    { key: 'r3', name: 'R3', label: 'Resistance 3', price: pivotState?.r3 ?? config?.r3 ?? 4657.017, type: 'RESISTANCE' },
+    { key: 'r2', name: 'R2', label: 'Resistance 2', price: pivotState?.r2 ?? config?.r2 ?? 4580.747, type: 'RESISTANCE' },
+    { key: 's2', name: 'S2', label: 'Support 2', price: pivotState?.s2 ?? config?.s2 ?? 4333.967, type: 'SUPPORT' },
+    { key: 's3', name: 'S3', label: 'Support 3', price: pivotState?.s3 ?? config?.s3 ?? 4257.697, type: 'SUPPORT' }
   ];
 
   const prev = pivotState?.previousLevels;
