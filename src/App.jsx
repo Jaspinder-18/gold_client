@@ -11,19 +11,7 @@ import { api } from './services/api';
 import { initSocketListeners } from './services/socket';
 
 export function App() {
-  const [marketData, setMarketData] = useState({
-    price: 4345.50,
-    previousPrice: 4345.50,
-    bid: 4345.25,
-    ask: 4345.75,
-    high24h: 4386.20,
-    low24h: 4328.10,
-    change: -30.70,
-    changePercent: -0.70,
-    marketStatus: 'LIVE',
-    connected: true,
-    lastUpdated: new Date()
-  });
+  const [marketData, setMarketData] = useState(null);
 
   const [config, setConfig] = useState({
     r3: 4657.02,
@@ -259,7 +247,7 @@ export function App() {
             <PivotLevelsGrid
               config={config}
               alertStates={alertStates}
-              currentPrice={marketData?.price || 4345.50}
+              currentPrice={marketData?.price}
               onAutoCalc={handleAutoCalculatePivots}
               isAutoCalculating={isAutoCalculating}
             />

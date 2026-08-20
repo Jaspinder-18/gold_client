@@ -58,8 +58,8 @@ export const PivotLevelsGrid = ({ config, alertStates, currentPrice, onAutoCalc,
       <div className="grid grid-cols-2 gap-3 flex-1">
         {levels.map(lvl => {
           const state = alertStates?.[lvl.name] || { status: 'READY' };
-          const distance = Math.abs(currentPrice - lvl.price);
-          const isNear = distance <= (config?.tolerance || 0.20);
+          const distance = currentPrice ? Math.abs(currentPrice - lvl.price) : null;
+          const isNear = distance != null && distance <= (config?.tolerance || 0.20);
           
           // Color logic:
           // 1. Current Touch -> RED & BOLD
@@ -144,7 +144,7 @@ export const PivotLevelsGrid = ({ config, alertStates, currentPrice, onAutoCalc,
                     ? 'text-blue-300 font-bold'
                     : 'text-yellow-400 font-semibold'
                 }>
-                  ${distance.toFixed(2)}
+                  {distance != null ? `$${distance.toFixed(2)}` : '--'}
                 </span>
               </div>
 

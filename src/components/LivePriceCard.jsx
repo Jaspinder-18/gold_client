@@ -23,9 +23,9 @@ export const LivePriceCard = ({
   onManualCapture,
   isCapturing
 }) => {
-  const price = marketData?.price || 4345.50;
-  const change = marketData?.change || 0;
-  const changePercent = marketData?.changePercent || 0;
+  const price = marketData?.price;
+  const change = marketData?.change ?? 0;
+  const changePercent = marketData?.changePercent ?? 0;
   const isPositive = change >= 0;
 
   // 'up' = Green (bullish), 'down' = Red (bearish)
@@ -33,19 +33,23 @@ export const LivePriceCard = ({
   const prevPriceRef = useRef(price);
 
   useEffect(() => {
-    if (price > prevPriceRef.current) {
-      setTickDirection('up');
-    } else if (price < prevPriceRef.current) {
-      setTickDirection('down');
+    if (price && prevPriceRef.current) {
+      if (price > prevPriceRef.current) {
+        setTickDirection('up');
+      } else if (price < prevPriceRef.current) {
+        setTickDirection('down');
+      }
     }
-    prevPriceRef.current = price;
+    if (price) {
+      prevPriceRef.current = price;
+    }
   }, [price]);
 
   const activeLevel = detectedLevel || 'MONITORING R3, R2, S2, S3';
 
   // Format price into main dollars and cents with 2 decimals
-  const formattedPriceStr = Number(price).toFixed(2);
-  const [dollars, cents] = formattedPriceStr.split('.');
+  const formattedPriceStr = price ? Number(price).toFixed(2) : null;
+  const [dollars, cents] = formattedPriceStr ? formattedPriceStr.split('.') : ['---', '--'];
 
   return (
     <div className="h-full flex flex-col justify-between rounded-2xl bg-gradient-to-b from-dark-850 to-dark-900 border border-dark-700/80 p-5 shadow-2xl relative overflow-hidden">
