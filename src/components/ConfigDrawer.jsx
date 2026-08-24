@@ -17,7 +17,8 @@ export const ConfigDrawer = ({ config, onClose, onConfigSaved }) => {
     tradingViewTicker: config?.tradingViewTicker || 'OANDA:XAUUSD',
     customChartUrl: config?.customChartUrl || 'https://www.tradingview.com/chart/hRhqMpmT/?symbol=OANDA%3AXAUUSD',
     chartTimeframe: config?.chartTimeframe || '5',
-    chartRange: config?.chartRange || '2D'
+    chartRange: config?.chartRange || '1D',
+    barSpacing: config?.barSpacing || 22
   });
 
   useEffect(() => {
@@ -30,6 +31,7 @@ export const ConfigDrawer = ({ config, onClose, onConfigSaved }) => {
         s3: config.s3 || prev.s3,
         chartTimeframe: config.chartTimeframe || prev.chartTimeframe,
         chartRange: config.chartRange || prev.chartRange,
+        barSpacing: config.barSpacing || prev.barSpacing,
         tolerance: config.tolerance !== undefined ? config.tolerance : prev.tolerance,
         retriggerDistance: config.retriggerDistance !== undefined ? config.retriggerDistance : prev.retriggerDistance,
         tradingViewTicker: config.tradingViewTicker || prev.tradingViewTicker,
@@ -65,7 +67,8 @@ export const ConfigDrawer = ({ config, onClose, onConfigSaved }) => {
         tradingViewTicker: formData.tradingViewTicker,
         customChartUrl: formData.customChartUrl,
         chartTimeframe: formData.chartTimeframe,
-        chartRange: formData.chartRange
+        chartRange: formData.chartRange,
+        barSpacing: parseInt(formData.barSpacing, 10) || 22
       };
 
       const res = await api.updateConfig(payload);
