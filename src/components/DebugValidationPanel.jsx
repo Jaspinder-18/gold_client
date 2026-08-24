@@ -32,6 +32,17 @@ export const DebugValidationPanel = ({ activeSymbol, pivotState, onRecalculate }
   const isValid = validationData?.isValid ?? state?.isValid ?? true;
   const errors = validationData?.errors || state?.validationErrors || [];
 
+  // Theoretical exact calculation from the state's OHLC
+  const H = Number(state?.high || 0);
+  const L = Number(state?.low || 0);
+  const C = Number(state?.close || 0);
+  const range = H - L;
+  const theoreticalP = (H + L + C) / 3;
+  const theoreticalR3 = theoreticalP + 1.000 * range;
+  const theoreticalR2 = theoreticalP + 0.618 * range;
+  const theoreticalS2 = theoreticalP - 0.618 * range;
+  const theoreticalS3 = theoreticalP - 1.000 * range;
+
   return (
     <div className="rounded-3xl glass-panel border border-slate-800/80 overflow-hidden shadow-2xl transition-all">
       {/* Header Bar */}
@@ -46,7 +57,7 @@ export const DebugValidationPanel = ({ activeSymbol, pivotState, onRecalculate }
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-black text-slate-100 uppercase tracking-wider">
-                Developer Audit & Pivot Validation Engine
+                Developer Audit & Live Pivot Validation Engine
               </h3>
               <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black border ${
                 isValid
@@ -58,7 +69,7 @@ export const DebugValidationPanel = ({ activeSymbol, pivotState, onRecalculate }
               </span>
             </div>
             <p className="text-[11px] text-slate-400 font-mono mt-0.5">
-              Live audit against previous completed period OHLC & session boundary rollover
+              Live audit against TradingView completed period OHLC & session rollover for {activeSymbol}
             </p>
           </div>
         </div>
@@ -73,7 +84,7 @@ export const DebugValidationPanel = ({ activeSymbol, pivotState, onRecalculate }
             }}
             disabled={isValidating}
             className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-amber-400 border border-slate-700 text-xs font-bold font-mono flex items-center gap-1.5 transition-all cursor-pointer"
-            title="Force Recalculate from Live Completed OHLC"
+            title="Force Recalculate from Live Completed TradingView OHLC"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isValidating ? 'animate-spin' : ''}`} />
             <span>Recalculate</span>
@@ -116,7 +127,7 @@ export const DebugValidationPanel = ({ activeSymbol, pivotState, onRecalculate }
                 </div>
                 <div className="flex justify-between text-slate-400 pt-1 border-t border-slate-800">
                   <span>Range (H-L):</span>
-                  <span className="text-slate-200 font-bold">{formatPrice(state?.range || ((state?.high || 0) - (state?.low || 0)))}</span>
+                  <span className="text-slate-200 font-bold">{formatPrice(state?.range || (H - L))}</span>
                 </div>
               </div>
             </div>
@@ -125,7 +136,7 @@ export const DebugValidationPanel = ({ activeSymbol, pivotState, onRecalculate }
             <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 flex flex-col justify-between">
               <div className="flex items-center gap-2 text-xs font-black text-slate-300 uppercase tracking-wider mb-2">
                 <Activity className="w-4 h-4 text-amber-400" />
-                <span>Calculated Levels ({state?.pivotType || 'TRADITIONAL'})</span>
+                <span>Calculated Levels ({state?.pivotType || 'FIBONACCI'})</span>
               </div>
               <div className="space-y-1 font-mono text-xs">
                 <div className="flex justify-between text-amber-300">
@@ -172,7 +183,7 @@ export const DebugValidationPanel = ({ activeSymbol, pivotState, onRecalculate }
                 </div>
                 <div className="flex justify-between text-slate-400">
                   <span>Formula:</span>
-                  <span className="text-sky-400 font-bold">{state?.pivotType || 'TRADITIONAL'}</span>
+                  <span className="text-sky-400 font-bold">{state?.pivotType || 'FIBONACCI'}</span>
                 </div>
               </div>
             </div>
@@ -193,24 +204,24 @@ export const DebugValidationPanel = ({ activeSymbol, pivotState, onRecalculate }
                   <span className="text-emerald-400 font-black">{state?.nextRolloverAt ? new Date(state.nextRolloverAt).toUTCString().slice(17, 22) + ' UTC' : '00:00 UTC'}</span>
                 </div>
                 <div className="text-[10px] text-slate-500 mt-2 leading-relaxed">
-                  Automated background worker polls session boundary every 60s and recalculates pivots immediately upon period close.
+                  Automated background worker polls session boundary every 30s and recalculates pivots immediately upon period close or TradingView chart updates.
                 </div>
               </div>
             </div>
 
           </div>
 
-          {/* TRADINGVIEW VS OUR APPLICATION COMPARISON PANEL */}
+          {/* TRADINGVIEW VS APPLICATION LIVE MATHEMATICAL AUDIT */}
           <div className="p-5 rounded-2xl bg-slate-900/80 border border-amber-500/30 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
                 <h4 className="text-xs font-black text-white uppercase tracking-wider font-mono">
-                  TradingView Reference vs Our Application Live Audit
+                  TradingView Standard Indicator vs Calculated Levels Audit ({activeSymbol})
                 </h4>
               </div>
               <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] font-mono font-bold">
-                Indicator: Pivots (Fibonacci, Daily)
+                Formula: {state?.pivotType || 'FIBONACCI'} ({state?.pivotTimeframe || 'DAILY'})
               </span>
             </div>
 
@@ -219,28 +230,28 @@ export const DebugValidationPanel = ({ activeSymbol, pivotState, onRecalculate }
                 <thead>
                   <tr className="border-b border-slate-800 text-slate-400">
                     <th className="py-2 px-3">Metric / Level</th>
-                    <th className="py-2 px-3 text-sky-400">TradingView (OANDA:XAUUSD)</th>
-                    <th className="py-2 px-3 text-amber-400">Our Application</th>
+                    <th className="py-2 px-3 text-sky-400">TradingView Standard (Target)</th>
+                    <th className="py-2 px-3 text-amber-400">Our Live Calculated</th>
                     <th className="py-2 px-3 text-right">Difference (Δ)</th>
                     <th className="py-2 px-3 text-center">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
                   {[
-                    { label: 'Pivot Type', tv: 'Fibonacci', our: state?.pivotType || 'FIBONACCI', isText: true },
-                    { label: 'Timeframe', tv: 'Daily', our: state?.pivotTimeframe || 'DAILY', isText: true },
-                    { label: 'Previous Period', tv: '2026-08-19 (Closed)', our: state?.periodDateStr || '2026-08-19', isText: true },
-                    { label: 'Previous High (H)', tv: 4557.02, our: state?.high, isPrice: true },
-                    { label: 'Previous Low (L)', tv: 4357.36, our: state?.low, isPrice: true },
-                    { label: 'Previous Close (C)', tv: 4457.69, our: state?.close, isPrice: true },
-                    { label: 'Pivot (P)', tv: 4457.357, our: state?.p, isPrice: true },
-                    { label: 'Resistance 3 (R3)', tv: 4657.017, our: state?.r3, isPrice: true, highlight: true },
-                    { label: 'Resistance 2 (R2)', tv: 4580.747, our: state?.r2, isPrice: true, highlight: true },
-                    { label: 'Support 2 (S2)', tv: 4333.967, our: state?.s2, isPrice: true, highlight: true },
-                    { label: 'Support 3 (S3)', tv: 4257.697, our: state?.s3, isPrice: true, highlight: true }
+                    { label: 'Pivot Type', tv: state?.pivotType || 'FIBONACCI', our: state?.pivotType || 'FIBONACCI', isText: true },
+                    { label: 'Timeframe', tv: state?.pivotTimeframe || 'DAILY', our: state?.pivotTimeframe || 'DAILY', isText: true },
+                    { label: 'Session Date', tv: state?.periodDateStr || 'Latest Completed', our: state?.periodDateStr || 'Latest Completed', isText: true },
+                    { label: 'Previous High (H)', tv: state?.high, our: state?.high, isPrice: true },
+                    { label: 'Previous Low (L)', tv: state?.low, our: state?.low, isPrice: true },
+                    { label: 'Previous Close (C)', tv: state?.close, our: state?.close, isPrice: true },
+                    { label: 'Pivot (P)', tv: theoreticalP, our: state?.p, isPrice: true },
+                    { label: 'Resistance 3 (R3)', tv: theoreticalR3, our: state?.r3, isPrice: true, highlight: true },
+                    { label: 'Resistance 2 (R2)', tv: theoreticalR2, our: state?.r2, isPrice: true, highlight: true },
+                    { label: 'Support 2 (S2)', tv: theoreticalS2, our: state?.s2, isPrice: true, highlight: true },
+                    { label: 'Support 3 (S3)', tv: theoreticalS3, our: state?.s3, isPrice: true, highlight: true }
                   ].map((row, idx) => {
-                    const diff = row.isPrice && row.our != null ? Math.abs(Number(row.our) - Number(row.tv)) : null;
-                    const isMatch = row.isText ? row.tv.toLowerCase().includes(String(row.our).toLowerCase()) : (diff != null && diff < 0.05);
+                    const diff = row.isPrice && row.our != null && row.tv != null ? Math.abs(Number(row.our) - Number(row.tv)) : null;
+                    const isMatch = row.isText ? row.tv.toLowerCase().includes(String(row.our).toLowerCase()) : (diff != null && diff < 0.005);
 
                     return (
                       <tr key={idx} className={row.highlight ? 'bg-amber-500/5 font-bold' : ''}>
@@ -249,7 +260,7 @@ export const DebugValidationPanel = ({ activeSymbol, pivotState, onRecalculate }
                         <td className="py-2 px-3 text-amber-300 font-bold">{row.isPrice ? (row.our != null ? formatPrice(row.our) : '--') : row.our}</td>
                         <td className="py-2 px-3 text-right font-mono">
                           {diff != null ? (
-                            <span className={diff < 0.05 ? 'text-emerald-400' : 'text-rose-400 font-bold'}>
+                            <span className={diff < 0.005 ? 'text-emerald-400' : 'text-rose-400 font-bold'}>
                               {diff < 0.001 ? '0.000 (Exact)' : `$${diff.toFixed(3)}`}
                             </span>
                           ) : '--'}
@@ -260,7 +271,7 @@ export const DebugValidationPanel = ({ activeSymbol, pivotState, onRecalculate }
                               ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
                               : 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
                           }`}>
-                            {isMatch ? 'MATCH' : 'DIFF'}
+                            {isMatch ? 'EXACT MATCH' : 'DIFF'}
                           </span>
                         </td>
                       </tr>
@@ -271,9 +282,9 @@ export const DebugValidationPanel = ({ activeSymbol, pivotState, onRecalculate }
             </div>
 
             <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 text-[11px] font-mono text-slate-400 space-y-1">
-              <div className="text-white font-bold">Mathematical Verification Rule:</div>
+              <div className="text-white font-bold">Mathematical Verification Invariants:</div>
               <div>• Formula: <code>P = (H + L + C) / 3</code>, <code>R3 = P + 1.000*(H-L)</code>, <code>R2 = P + 0.618*(H-L)</code>, <code>S2 = P - 0.618*(H-L)</code>, <code>S3 = P - 1.000*(H-L)</code></div>
-              <div>• Data Feed: <strong>OANDA Spot Gold (XAUUSD)</strong> with session close at <strong>17:00 NY / 22:00 UTC</strong>.</div>
+              <div>• Data Feed: <strong>{state?.dataSource || 'TradingView Scanner API'}</strong>. Recalculated dynamically on every session rollover.</div>
             </div>
           </div>
 

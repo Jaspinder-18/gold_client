@@ -3,6 +3,7 @@ import { HeaderStatus } from './components/HeaderStatus';
 import { LivePriceCard } from './components/LivePriceCard';
 import { PivotLevelsGrid } from './components/PivotLevelsGrid';
 import { DebugValidationPanel } from './components/DebugValidationPanel';
+import { PreviousLevelsTable } from './components/PreviousLevelsTable';
 import { AlertHistoryTable } from './components/AlertHistoryTable';
 import { ScreenshotGallery } from './components/ScreenshotGallery';
 import { ScreenshotModal } from './components/ScreenshotModal';
@@ -17,6 +18,7 @@ export function App() {
   const [symbolConfig, setSymbolConfig] = useState(null);
   const [marketData, setMarketData] = useState(null);
   const [pivotState, setPivotState] = useState(null);
+  const [previousSessions, setPreviousSessions] = useState([]);
 
   const [config, setConfig] = useState({
     symbol: 'XAUUSD',
@@ -48,6 +50,18 @@ export function App() {
   const [isConfigDrawerOpen, setIsConfigDrawerOpen] = useState(false);
   const [isSymbolSearchOpen, setIsSymbolSearchOpen] = useState(false);
 
+  // Fetch historical sessions
+  const loadHistoricalSessions = useCallback(async (sym) => {
+    try {
+      const res = await api.getPivotHistory({ symbol: sym || activeSymbol, count: 10 });
+      if (res.data?.data && Array.isArray(res.data.data)) {
+        setPreviousSessions(res.data.data);
+      }
+    } catch (err) {
+      console.warn('Could not load historical sessions', err);
+    }
+  }, [activeSymbol]);
+
   // Fetch initial REST data
   const loadInitialData = useCallback(async () => {
     try {
@@ -60,9 +74,11 @@ export function App() {
         api.getAlertStates()
       ]);
 
+      let currentSym = 'XAUUSD';
       if (symRes.status === 'fulfilled' && symRes.value.data?.data) {
         const data = symRes.value.data.data;
-        setActiveSymbol(data.symbol || 'XAUUSD');
+        currentSym = data.symbol || 'XAUUSD';
+        setActiveSymbol(currentSym);
         setSymbolConfig(data.config);
         if (data.pivotState) setPivotState(data.pivotState);
         if (data.market) setMarketData(data.market);
@@ -90,10 +106,12 @@ export function App() {
       if (statesRes.status === 'fulfilled' && statesRes.value.data?.data) {
         setAlertStates(statesRes.value.data.data);
       }
+
+      loadHistoricalSessions(currentSym);
     } catch (err) {
       console.error('Error loading initial terminal data', err);
     }
-  }, []);
+  }, [loadHistoricalSessions]);
 
   useEffect(() => {
     loadInitialData();
@@ -108,7 +126,10 @@ export function App() {
       onConnect: () => setIsSocketConnected(true),
       onDisconnect: () => setIsSocketConnected(false),
       onInitialState: (state) => {
-        if (state.activeSymbol) setActiveSymbol(state.activeSymbol);
+        if (state.activeSymbol) {
+          setActiveSymbol(state.activeSymbol);
+          loadHistoricalSessions(state.activeSymbol);
+        }
         if (state.symbolConfig) setSymbolConfig(state.symbolConfig);
         if (state.market) setMarketData(state.market);
         if (state.config) setConfig(state.config);
@@ -117,7 +138,10 @@ export function App() {
         if (state.alertStates) setAlertStates(state.alertStates);
       },
       onSymbolActive: (data) => {
-        if (data.symbol) setActiveSymbol(data.symbol);
+        if (data.symbol) {
+          setActiveSymbol(data.symbol);
+          loadHistoricalSessions(data.symbol);
+        }
         if (data.config) setSymbolConfig(data.config);
         if (data.pivotState) setPivotState(data.pivotState);
         if (data.market) setMarketData(data.market);
@@ -139,6 +163,7 @@ export function App() {
             r1: data.r1,
             s1: data.s1
           }));
+          loadHistoricalSessions(data.symbol || activeSymbol);
           // Reset alert states to READY immediately for the new pivot period
           setAlertStates({
             R3: { status: 'READY' },
@@ -175,7 +200,7 @@ export function App() {
       clearInterval(healthInterval);
       cleanupSocket();
     };
-  }, [loadInitialData]);
+  }, [loadInitialData, loadHistoricalSessions, activeSymbol]);
 
   // Handle Switching Active Symbol
   const handleSelectSymbol = async (newSym) => {
@@ -187,6 +212,7 @@ export function App() {
         setSymbolConfig(data.config);
         setPivotState(data.pivotState);
         if (data.market) setMarketData(data.market);
+        loadHistoricalSessions(data.symbol);
       }
     } catch (err) {
       alert('Failed to switch symbol: ' + (err.response?.data?.error || err.message));
@@ -270,9 +296,10 @@ export function App() {
   const handleAutoCalculatePivots = async () => {
     setIsAutoCalculating(true);
     try {
-      const res = await api.autoCalculatePivots();
+      const res = await api.autoCalculatePivots({ symbol: activeSymbol });
       if (res.data?.data) {
         setPivotState(res.data.data);
+        loadHistoricalSessions(activeSymbol);
       }
     } catch (err) {
       console.error('Failed to auto-calculate pivot levels', err);
@@ -328,6 +355,9 @@ export function App() {
           </div>
 
         </div>
+
+        {/* 10 Previous Daily Sessions Table with Multi-Day History */}
+        <PreviousLevelsTable previousSessions={previousSessions} />
 
         {/* Developer Audit & Validation Inspector */}
         <DebugValidationPanel

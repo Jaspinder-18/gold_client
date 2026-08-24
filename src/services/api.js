@@ -22,8 +22,8 @@ export const api = {
   getConfig: () => axios.get(`${API_BASE}/config`),
   updateConfig: (data) => axios.put(`${API_BASE}/config`, data),
   calculatePivots: (data) => axios.post(`${API_BASE}/config/calculate`, data),
-  autoCalculatePivots: () => axios.post(`${API_BASE}/config/auto-calculate`),
-  getPivotHistory: () => axios.get(`${API_BASE}/config/history`),
+  autoCalculatePivots: (data = {}) => axios.post(`${API_BASE}/config/auto-calculate`, data),
+  getPivotHistory: (params = {}) => axios.get(`${API_BASE}/config/history`, { params: typeof params === 'string' ? { symbol: params } : params }),
 
   // Symbol endpoints
   getSymbols: (assetType = 'ALL') => axios.get(`${API_BASE}/symbols?assetType=${assetType}`),
