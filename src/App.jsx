@@ -142,19 +142,25 @@ export function App() {
           setActiveSymbol(data.symbol);
           loadHistoricalSessions(data.symbol);
         }
-        if (data.config) setSymbolConfig(data.config);
+        if (data.config) {
+          setSymbolConfig(data.config);
+          setConfig(prev => ({ ...prev, ...data.config, symbol: data.symbol }));
+        }
         if (data.pivotState) setPivotState(data.pivotState);
         if (data.market) setMarketData(data.market);
         if (data.alertStates) setAlertStates(data.alertStates);
       },
       onPivotState: (state) => {
-        if (state) setPivotState(state);
+        if (state && (!state.symbol || state.symbol === activeSymbol)) {
+          setPivotState(state);
+        }
       },
       onPivotUpdated: (data) => {
-        if (data) {
+        if (data && (!data.symbol || data.symbol === activeSymbol)) {
           setPivotState(data);
           setConfig(prev => ({
             ...prev,
+            symbol: data.symbol || prev.symbol,
             r3: data.r3,
             r2: data.r2,
             s2: data.s2,
@@ -166,22 +172,26 @@ export function App() {
           loadHistoricalSessions(data.symbol || activeSymbol);
           // Reset alert states to READY immediately for the new pivot period
           setAlertStates({
-            R3: { status: 'READY' },
-            R2: { status: 'READY' },
-            R1: { status: 'READY' },
-            PIVOT: { status: 'READY' },
-            S1: { status: 'READY' },
-            S2: { status: 'READY' },
-            S3: { status: 'READY' }
+            R3: { status: 'READY', touchCount: 0, maxTouches: 2 },
+            R2: { status: 'READY', touchCount: 0, maxTouches: 2 },
+            R1: { status: 'READY', touchCount: 0, maxTouches: 2 },
+            PIVOT: { status: 'READY', touchCount: 0, maxTouches: 2 },
+            S1: { status: 'READY', touchCount: 0, maxTouches: 2 },
+            S2: { status: 'READY', touchCount: 0, maxTouches: 2 },
+            S3: { status: 'READY', touchCount: 0, maxTouches: 2 }
           });
         }
       },
       onConfigUpdate: (newConfig) => {
-        if (newConfig) setConfig(newConfig);
+        if (newConfig && (!newConfig.symbol || newConfig.symbol === activeSymbol)) {
+          setConfig(newConfig);
+        }
       },
       onMarketTick: (data) => {
-        setMarketData(data);
-        if (data.distances) setDistances(data.distances);
+        if (!data.rawSymbol || data.rawSymbol === activeSymbol) {
+          setMarketData(data);
+          if (data.distances) setDistances(data.distances);
+        }
       },
       onAlertTriggered: (payload) => {
         if (payload.event) {
@@ -212,6 +222,7 @@ export function App() {
         setSymbolConfig(data.config);
         setPivotState(data.pivotState);
         if (data.market) setMarketData(data.market);
+        if (data.config) setConfig(prev => ({ ...prev, ...data.config, symbol: data.symbol }));
         loadHistoricalSessions(data.symbol);
       }
     } catch (err) {

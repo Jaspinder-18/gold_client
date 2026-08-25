@@ -37,7 +37,7 @@ export const ScreenshotModal = ({ alert, onClose, onDeleteAlert }) => {
             </span>
             <div>
               <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <span>Gold (XAU/USD)</span>
+                <span>{alert.displayName || alert.symbol || 'Multi-Asset'}</span>
                 <span className="font-mono text-gold-400">{formatPrice(alert.currentPrice)}</span>
               </h2>
               <p className="text-xs text-slate-400 font-mono">
@@ -50,7 +50,7 @@ export const ScreenshotModal = ({ alert, onClose, onDeleteAlert }) => {
             {alert.screenshotPath && (
               <a
                 href={screenshotUrl}
-                download={`gold-tradingview-${alert.level}-${Date.now()}.png`}
+                download={`${(alert.symbol || 'chart').toLowerCase()}-tradingview-${alert.level}-${Date.now()}.png`}
                 target="_blank"
                 rel="noreferrer"
                 className="p-2 rounded-lg bg-dark-800 hover:bg-dark-700 text-slate-300 hover:text-white border border-dark-700 transition-colors flex items-center gap-1.5 text-xs font-mono"

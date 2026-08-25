@@ -5,10 +5,10 @@ import { formatPrice } from '../utils/formatters';
 export const PivotLevelsGrid = ({ config, pivotState, alertStates, currentPrice, onAutoCalc, isAutoCalculating }) => {
   // Strictly only the 4 levels: R3, R2, S2, S3
   const levels = [
-    { key: 'r3', name: 'R3', label: 'Resistance 3', price: pivotState?.r3 ?? config?.r3 ?? 4657.017, type: 'RESISTANCE' },
-    { key: 'r2', name: 'R2', label: 'Resistance 2', price: pivotState?.r2 ?? config?.r2 ?? 4580.747, type: 'RESISTANCE' },
-    { key: 's2', name: 'S2', label: 'Support 2', price: pivotState?.s2 ?? config?.s2 ?? 4333.967, type: 'SUPPORT' },
-    { key: 's3', name: 'S3', label: 'Support 3', price: pivotState?.s3 ?? config?.s3 ?? 4257.697, type: 'SUPPORT' }
+    { key: 'r3', name: 'R3', label: 'Resistance 3', price: pivotState?.r3 ?? config?.r3 ?? 0, type: 'RESISTANCE' },
+    { key: 'r2', name: 'R2', label: 'Resistance 2', price: pivotState?.r2 ?? config?.r2 ?? 0, type: 'RESISTANCE' },
+    { key: 's2', name: 'S2', label: 'Support 2', price: pivotState?.s2 ?? config?.s2 ?? 0, type: 'SUPPORT' },
+    { key: 's3', name: 'S3', label: 'Support 3', price: pivotState?.s3 ?? config?.s3 ?? 0, type: 'SUPPORT' }
   ];
 
   const prev = pivotState?.previousLevels;
@@ -84,22 +84,23 @@ export const PivotLevelsGrid = ({ config, pivotState, alertStates, currentPrice,
       {/* 2x2 Grid of the 4 Levels */}
       <div className="grid grid-cols-2 gap-3.5 flex-1">
         {levels.map(lvl => {
-          const state = alertStates?.[lvl.name] || { status: 'READY' };
+          const rawState = alertStates?.[lvl.name];
+          const stateStatus = typeof rawState === 'string' ? rawState : (rawState?.status || 'READY');
+          const touchCount = typeof rawState === 'object' ? (rawState?.touchCount || 0) : 0;
           const distance = currentPrice ? Math.abs(currentPrice - lvl.price) : null;
           const isNear = distance != null && distance <= (config?.tolerance || 0.20);
           
-          // Color logic:
-          // 1. Current Touch -> RED & BOLD
-          // 2. Previous Touch -> BLUE
-          // 3. Ready / Untouched -> GOLD/YELLOW
-          const isCurrentlyTouched = state.status === 'TRIGGERED' || isNear;
-          const isPreviouslyTouched = state.status === 'PREVIOUSLY_TOUCHED' && !isCurrentlyTouched;
+          const isCompleted = stateStatus === 'COMPLETED' || touchCount >= 2;
+          const isCurrentlyTouched = (stateStatus === 'TRIGGERED' || isNear) && !isCompleted;
+          const isPreviouslyTouched = stateStatus === 'PREVIOUSLY_TOUCHED' && !isCurrentlyTouched && !isCompleted;
 
           return (
             <div
               key={lvl.name}
               className={`relative rounded-2xl p-4 border transition-all duration-300 flex flex-col justify-between ${
-                isCurrentlyTouched
+                isCompleted
+                  ? 'bg-purple-950/30 border-2 border-purple-500/60 shadow-lg shadow-purple-950/20'
+                  : isCurrentlyTouched
                   ? 'bg-rose-500/15 border-2 border-rose-500 shadow-xl shadow-rose-500/30 ring-2 ring-rose-500/50 animate-pulse'
                   : isPreviouslyTouched
                   ? 'bg-blue-500/10 border-2 border-blue-500/80 shadow-lg shadow-blue-500/20'
@@ -109,7 +110,9 @@ export const PivotLevelsGrid = ({ config, pivotState, alertStates, currentPrice,
               {/* Level Badge Header */}
               <div className="flex items-center justify-between">
                 <span className={`text-xs px-2.5 py-1 rounded-lg font-black tracking-wider ${
-                  isCurrentlyTouched
+                  isCompleted
+                    ? 'bg-purple-700 text-white shadow-md'
+                    : isCurrentlyTouched
                     ? 'bg-rose-600 text-white shadow-md'
                     : isPreviouslyTouched
                     ? 'bg-blue-600 text-white shadow-md'
@@ -120,26 +123,33 @@ export const PivotLevelsGrid = ({ config, pivotState, alertStates, currentPrice,
 
                 {/* State Pill */}
                 <span className={`text-[10px] font-black px-2.5 py-1 rounded-full flex items-center gap-1.5 ${
-                  isCurrentlyTouched
+                  isCompleted
+                    ? 'bg-purple-500/25 text-purple-300 border border-purple-500/50'
+                    : isCurrentlyTouched
                     ? 'bg-rose-500 text-white shadow-md animate-bounce'
                     : isPreviouslyTouched
                     ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
                     : 'bg-amber-500/10 text-amber-300 border border-amber-500/25'
                 }`}>
-                  {isCurrentlyTouched ? (
+                  {isCompleted ? (
+                    <>
+                      <CheckCircle className="w-3.5 h-3.5 text-purple-400" />
+                      <span>2/2 TOUCHES (LOCKED)</span>
+                    </>
+                  ) : isCurrentlyTouched ? (
                     <>
                       <ShieldAlert className="w-3.5 h-3.5" />
-                      <span>TOUCHED</span>
+                      <span>TOUCHED {touchCount > 0 ? `(${touchCount}/2)` : ''}</span>
                     </>
                   ) : isPreviouslyTouched ? (
                     <>
                       <Clock className="w-3.5 h-3.5 text-blue-400" />
-                      <span>PREVIOUS</span>
+                      <span>PREVIOUS (1/2)</span>
                     </>
                   ) : (
                     <>
                       <CheckCircle className="w-3.5 h-3.5 text-amber-400" />
-                      <span>READY</span>
+                      <span>READY {touchCount === 1 ? '(1/2)' : '(0/2)'}</span>
                     </>
                   )}
                 </span>

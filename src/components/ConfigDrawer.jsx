@@ -54,6 +54,7 @@ export const ConfigDrawer = ({ config, onClose, onConfigSaved }) => {
 
     try {
       const payload = {
+        symbol: config?.symbol,
         r3: parseFloat(formData.r3),
         r2: parseFloat(formData.r2),
         s2: parseFloat(formData.s2),
@@ -66,8 +67,8 @@ export const ConfigDrawer = ({ config, onClose, onConfigSaved }) => {
         enabled: formData.enabled,
         tradingViewTicker: formData.tradingViewTicker,
         customChartUrl: formData.customChartUrl,
-        chartTimeframe: formData.chartTimeframe,
-        chartRange: formData.chartRange,
+        chartTimeframe: String(formData.chartTimeframe),
+        chartRange: String(formData.chartRange),
         barSpacing: parseInt(formData.barSpacing, 10) || 22
       };
 
