@@ -65,7 +65,7 @@ export const PivotLevelsGrid = ({ config, pivotState, alertStates, currentPrice,
           </div>
         </div>
 
-        {/* Pivot Period Meta Banner */}
+        {/* Pivot Period Meta Banner with Auto-Calc Info */}
         <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 rounded-xl bg-slate-900/80 border border-slate-800 text-xs font-mono">
           <div className="flex items-center gap-2">
             <Calendar className="w-3.5 h-3.5 text-amber-400" />
@@ -76,6 +76,11 @@ export const PivotLevelsGrid = ({ config, pivotState, alertStates, currentPrice,
             </span>
           </div>
           <div className="flex items-center gap-3 text-slate-400 text-[11px]">
+            {config?.autoCalculatePivot !== false && (
+              <span className="text-amber-300/90 font-medium">
+                Auto-Calc: <strong className="text-amber-400">{config?.autoCalcIntervalMinutes || 15}m</strong>
+              </span>
+            )}
             <span>Next Rollover: <strong className="text-amber-400">{pivotState?.nextRolloverAt ? new Date(pivotState.nextRolloverAt).toUTCString().slice(17, 22) + ' UTC' : '22:00 UTC'}</strong></span>
           </div>
         </div>

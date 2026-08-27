@@ -9,6 +9,7 @@ export const ConfigDrawer = ({ config, onClose, onConfigSaved }) => {
     s2: config?.s2 || 4333.97,
     s3: config?.s3 || 4257.70,
     autoCalculatePivot: config?.autoCalculatePivot || false,
+    autoCalcIntervalMinutes: config?.autoCalcIntervalMinutes || 15,
     pivotType: config?.pivotType || 'FIBONACCI',
     tolerance: config?.tolerance || 0.20,
     retriggerDistance: config?.retriggerDistance || 1.00,
@@ -29,6 +30,8 @@ export const ConfigDrawer = ({ config, onClose, onConfigSaved }) => {
         r2: config.r2 || prev.r2,
         s2: config.s2 || prev.s2,
         s3: config.s3 || prev.s3,
+        autoCalculatePivot: config.autoCalculatePivot !== undefined ? config.autoCalculatePivot : prev.autoCalculatePivot,
+        autoCalcIntervalMinutes: config.autoCalcIntervalMinutes || prev.autoCalcIntervalMinutes || 15,
         chartTimeframe: config.chartTimeframe || prev.chartTimeframe,
         chartRange: config.chartRange || prev.chartRange,
         barSpacing: config.barSpacing || prev.barSpacing,
@@ -60,6 +63,7 @@ export const ConfigDrawer = ({ config, onClose, onConfigSaved }) => {
         s2: parseFloat(formData.s2),
         s3: parseFloat(formData.s3),
         autoCalculatePivot: formData.autoCalculatePivot,
+        autoCalcIntervalMinutes: parseInt(formData.autoCalcIntervalMinutes, 10) || 15,
         pivotType: formData.pivotType,
         tolerance: parseFloat(formData.tolerance),
         retriggerDistance: parseFloat(formData.retriggerDistance),
@@ -137,7 +141,7 @@ export const ConfigDrawer = ({ config, onClose, onConfigSaved }) => {
               <div className="flex items-center justify-between pt-2 border-t border-dark-800/80">
                 <div>
                   <div className="text-xs font-bold text-slate-200">Live Auto-Update Levels</div>
-                  <div className="text-[10px] text-slate-400">Automatically recalculate when market range shifts</div>
+                  <div className="text-[10px] text-slate-400">Periodic auto-calculation & replacement</div>
                 </div>
                 <input
                   type="checkbox"
@@ -146,6 +150,24 @@ export const ConfigDrawer = ({ config, onClose, onConfigSaved }) => {
                   className="w-4 h-4 accent-gold-500 rounded cursor-pointer"
                 />
               </div>
+
+              {formData.autoCalculatePivot && (
+                <div className="pt-2 border-t border-dark-800/80 flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-semibold text-slate-300">Auto-Calc Interval</div>
+                    <div className="text-[10px] text-slate-400">Recalculate & replace levels every</div>
+                  </div>
+                  <select
+                    value={formData.autoCalcIntervalMinutes}
+                    onChange={(e) => handleChange('autoCalcIntervalMinutes', parseInt(e.target.value, 10))}
+                    className="px-2.5 py-1 rounded-lg bg-dark-900 border border-dark-700 text-xs font-semibold text-gold-400 focus:outline-none focus:border-gold-500 cursor-pointer"
+                  >
+                    <option value={15}>15 Minutes</option>
+                    <option value={30}>30 Minutes</option>
+                    <option value={60}>60 Minutes (1 Hour)</option>
+                  </select>
+                </div>
+              )}
             </div>
 
             {/* TradingView Chart Settings */}
