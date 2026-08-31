@@ -1,17 +1,20 @@
 import React from 'react';
-import { Activity, Radio, ShieldCheck, Send, Database, Sliders, PlayCircle, Search, ChevronDown } from 'lucide-react';
+import { Activity, Radio, ShieldCheck, Send, Database, Sliders, PlayCircle, Search, ChevronDown, Volume2, VolumeX } from 'lucide-react';
 
 export const HeaderStatus = ({
   activeSymbol = 'XAUUSD',
   symbolConfig = {},
   systemHealth,
   isSocketConnected,
+  isSoundEnabled = true,
+  onToggleSound,
   onOpenSymbolSearch,
   onOpenTestConsole,
   onOpenSettings
 }) => {
   const marketFeed = systemHealth?.marketFeed || {};
   const tg = systemHealth?.telegram || {};
+
 
   return (
     <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl sticky top-0 z-40 px-4 lg:px-8 py-3.5 shadow-2xl">
@@ -101,6 +104,20 @@ export const HeaderStatus = ({
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2 ml-1.5">
+            {/* Audio Alarm Toggle */}
+            <button
+              onClick={onToggleSound}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-semibold transition-all duration-200 shadow-sm cursor-pointer active:scale-95 ${
+                isSoundEnabled
+                  ? 'bg-amber-500/15 text-amber-300 border-amber-500/40 hover:bg-amber-500/25 shadow-amber-500/10'
+                  : 'bg-slate-900/80 text-slate-400 border-slate-800 hover:text-slate-200'
+              }`}
+              title={isSoundEnabled ? 'Audio Alarms Enabled (Click to Mute)' : 'Audio Alarms Muted (Click to Unmute)'}
+            >
+              {isSoundEnabled ? <Volume2 className="w-3.5 h-3.5 text-amber-400" /> : <VolumeX className="w-3.5 h-3.5 text-slate-500" />}
+              <span className="text-xs">{isSoundEnabled ? 'Alarm ON' : 'Muted'}</span>
+            </button>
+
             <button
               onClick={onOpenTestConsole}
               className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-extrabold transition-all duration-200 shadow-lg shadow-amber-500/25 active:scale-95 cursor-pointer"
@@ -117,6 +134,7 @@ export const HeaderStatus = ({
               <Sliders className="w-4 h-4" />
             </button>
           </div>
+
 
         </div>
 

@@ -12,6 +12,7 @@ import { ConfigDrawer } from './components/ConfigDrawer';
 import { SymbolSearchModal } from './components/SymbolSearchModal';
 import { api } from './services/api';
 import { initSocketListeners } from './services/socket';
+import { audioAlert } from './utils/audioAlert';
 
 export function App() {
   const [activeSymbol, setActiveSymbol] = useState('XAUUSD');
@@ -19,6 +20,8 @@ export function App() {
   const [marketData, setMarketData] = useState(null);
   const [pivotState, setPivotState] = useState(null);
   const [previousSessions, setPreviousSessions] = useState([]);
+  const [isSoundEnabled, setIsSoundEnabled] = useState(audioAlert.enabled);
+
 
   const [config, setConfig] = useState({
     symbol: 'XAUUSD',
@@ -196,6 +199,8 @@ export function App() {
       onAlertTriggered: (payload) => {
         if (payload.event) {
           setAlerts(prev => [payload.event, ...prev.filter(a => a._id !== payload.event._id)].slice(0, 6));
+          // Trigger Loud Alarm Sound on Web App Terminal
+          audioAlert.playAlarm({ durationSeconds: 6 });
         }
         if (payload.alertStates) {
           setAlertStates(payload.alertStates);
@@ -204,6 +209,7 @@ export function App() {
           setDistances(payload.distances);
         }
       }
+
     });
 
     return () => {
@@ -319,6 +325,16 @@ export function App() {
     }
   };
 
+  const handleToggleSound = () => {
+    const next = !isSoundEnabled;
+    setIsSoundEnabled(next);
+    audioAlert.setEnabled(next);
+    if (next) {
+      audioAlert.playAlarm({ durationSeconds: 1.5 });
+    }
+  };
+
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-amber-400 selection:text-slate-950">
       
@@ -328,10 +344,13 @@ export function App() {
         symbolConfig={symbolConfig}
         systemHealth={systemHealth}
         isSocketConnected={isSocketConnected}
+        isSoundEnabled={isSoundEnabled}
+        onToggleSound={handleToggleSound}
         onOpenSymbolSearch={() => setIsSymbolSearchOpen(true)}
         onOpenTestConsole={() => setIsTestConsoleOpen(true)}
         onOpenSettings={() => setIsConfigDrawerOpen(true)}
       />
+
 
       {/* Main Terminal Body */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 space-y-6">
