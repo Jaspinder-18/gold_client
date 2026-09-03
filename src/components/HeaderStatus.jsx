@@ -52,7 +52,7 @@ export const HeaderStatus = ({
               <span className="text-amber-500/50">•</span>
               <span className="text-slate-400 font-mono text-[11px]">{symbolConfig?.exchange || 'OANDA'}</span>
               <span className="text-amber-500/50">•</span>
-              <span className="text-amber-400/90 font-semibold">Dynamic Pivot Levels</span>
+              <span className="text-amber-400/90 font-semibold">Custom Price Alerts</span>
             </p>
           </div>
         </div>
