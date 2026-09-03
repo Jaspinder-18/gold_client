@@ -1,6 +1,17 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Camera, Clock, Activity, ShieldAlert, Layers, Zap } from 'lucide-react';
-import { formatPrice, formatNumber, formatTime } from '../utils/formatters';
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  ArrowUpRight, 
+  ArrowDownRight, 
+  Camera, 
+  Clock, 
+  Activity, 
+  Target, 
+  Layers, 
+  Zap 
+} from 'lucide-react';
+import { formatNumber, formatTime } from '../utils/formatters';
 
 const TIMEFRAMES = [
   { value: '1', label: '1M' },
@@ -15,10 +26,11 @@ const TIMEFRAMES = [
 
 export const LivePriceCard = ({
   marketData,
-  alertStates,
   lastScreenshotTime,
   detectedLevel,
-  currentTimeframe = '5',
+  customTargetPrice,
+  customAlertStatus,
+  currentTimeframe = '15',
   onTimeframeChange,
   onManualCapture,
   isCapturing
@@ -45,11 +57,17 @@ export const LivePriceCard = ({
     }
   }, [price]);
 
-  const activeLevel = detectedLevel || 'MONITORING R3, R2, S2, S3';
-
-  // Format price into main dollars and cents with 2 decimals
-  const formattedPriceStr = price ? Number(price).toFixed(2) : null;
-  const [dollars, cents] = formattedPriceStr ? formattedPriceStr.split('.') : ['---', '--'];
+  // Formatted active custom target status
+  let customTargetDisplay = 'No Target Set';
+  if (customTargetPrice && Number(customTargetPrice) > 0) {
+    if (customAlertStatus === 'TRIGGERED') {
+      customTargetDisplay = `TOUCHED: $${Number(customTargetPrice).toFixed(2)}`;
+    } else {
+      customTargetDisplay = `TARGET: $${Number(customTargetPrice).toFixed(2)}`;
+    }
+  } else if (detectedLevel) {
+    customTargetDisplay = detectedLevel;
+  }
 
   return (
     <div className={`h-full flex flex-col justify-between rounded-3xl p-6 shadow-2xl relative overflow-hidden transition-all duration-500 border ${
@@ -69,11 +87,11 @@ export const LivePriceCard = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="text-xs font-black uppercase tracking-wider text-amber-400 font-mono px-2.5 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/25">
-              {marketData?.assetType || 'ASSET'}
+              {marketData?.assetType || 'COMMODITY'}
             </span>
             <span className="text-slate-600">•</span>
             <span className="text-xs text-slate-400 font-medium truncate max-w-[200px]">
-              {marketData?.provider || 'TradingView Live Stream'}
+              {marketData?.provider || 'TradingView Real-Time (OANDA)'}
             </span>
           </div>
 
@@ -87,12 +105,16 @@ export const LivePriceCard = ({
         <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4">
           <div>
             <div className="flex items-baseline gap-2.5">
-              <h2 className="text-2xl font-black text-white tracking-tight">{marketData?.displayName || marketData?.symbol || 'GOLD / USD'}</h2>
-              <span className="text-xs font-mono text-slate-400 font-bold px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800">{marketData?.rawSymbol || 'XAUUSD'}</span>
+              <h2 className="text-2xl font-black text-white tracking-tight">
+                {marketData?.displayName || marketData?.symbol || 'Gold / USD Spot'}
+              </h2>
+              <span className="text-xs font-mono text-slate-400 font-bold px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800">
+                {marketData?.rawSymbol || 'XAUUSD'}
+              </span>
             </div>
 
             <div className="mt-2 flex flex-wrap items-baseline gap-3">
-              {/* Live Price Display: Up -> Green, Down -> Red */}
+              {/* Live Price Display */}
               <div className={`text-5xl sm:text-6xl font-black font-mono tracking-tight transition-all duration-200 flex items-baseline tabular-nums ${
                 tickDirection === 'up'
                   ? 'text-emerald-400 drop-shadow-[0_0_25px_rgba(52,211,153,0.6)]'
@@ -131,7 +153,7 @@ export const LivePriceCard = ({
               <span className="text-slate-700">|</span>
               <span>Ask: <strong className="text-slate-200">${formatNumber(marketData?.ask || (price ? price + 0.25 : 0), 2)}</strong></span>
               <span className="text-slate-700">|</span>
-              <span>Spread: <strong className="text-amber-400 font-bold">${formatNumber(Math.abs((marketData?.ask || 0) - (marketData?.bid || 0)) || 0.50, 2)}</strong></span>
+              <span>Spread: <strong className="text-amber-400 font-bold">${formatNumber(Math.abs((marketData?.ask || 0) - (marketData?.bid || 0)) || 0.01, 2)}</strong></span>
             </div>
           </div>
 
@@ -165,13 +187,15 @@ export const LivePriceCard = ({
           </div>
 
           <div className="p-3 rounded-2xl bg-slate-950/70 border border-slate-800/80 hover:border-slate-700 transition-all">
-            <div className="text-[10px] text-slate-400 font-semibold mb-1">Active Level</div>
-            <div className="font-mono text-xs font-black text-amber-400 flex items-center gap-1.5 truncate">
-              <ShieldAlert className="w-3.5 h-3.5" />
-              <span className="truncate">{activeLevel}</span>
+            <div className="text-[10px] text-slate-400 font-semibold mb-1">Custom Target</div>
+            <div className={`font-mono text-xs font-black flex items-center gap-1.5 truncate ${
+              customAlertStatus === 'TRIGGERED' ? 'text-rose-400 animate-pulse' : 'text-amber-400'
+            }`}>
+              <Target className="w-3.5 h-3.5" />
+              <span className="truncate">{customTargetDisplay}</span>
             </div>
             <div className="text-[10px] text-slate-500 font-mono mt-1">
-              Real-Time Tracking
+              {customAlertStatus === 'ACTIVE' ? 'Active & Monitoring' : customAlertStatus === 'TRIGGERED' ? 'Triggered / Touched' : 'Standby'}
             </div>
           </div>
 
@@ -182,7 +206,7 @@ export const LivePriceCard = ({
               <span>{lastScreenshotTime ? formatTime(lastScreenshotTime) : 'Ready'}</span>
             </div>
             <div className="text-[10px] text-slate-500 font-mono mt-1">
-              Max 20 Stored
+              Max 6 Stored
             </div>
           </div>
 

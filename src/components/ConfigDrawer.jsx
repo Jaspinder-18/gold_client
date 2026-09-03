@@ -14,6 +14,8 @@ export const ConfigDrawer = ({ config, onClose, onConfigSaved }) => {
     tolerance: config?.tolerance || 0.20,
     retriggerDistance: config?.retriggerDistance || 1.00,
     telegramAlertsEnabled: config?.telegramAlertsEnabled !== false,
+    customPriceAlertEnabled: config?.customPriceAlertEnabled || false,
+    customPriceAlertTarget: config?.customPriceAlertTarget || '',
     enabled: config?.enabled !== false,
     tradingViewTicker: config?.tradingViewTicker || 'OANDA:XAUUSD',
     customChartUrl: config?.customChartUrl || 'https://www.tradingview.com/chart/hRhqMpmT/?symbol=OANDA%3AXAUUSD',
@@ -32,6 +34,8 @@ export const ConfigDrawer = ({ config, onClose, onConfigSaved }) => {
         s3: config.s3 || prev.s3,
         autoCalculatePivot: config.autoCalculatePivot !== undefined ? config.autoCalculatePivot : prev.autoCalculatePivot,
         autoCalcIntervalMinutes: config.autoCalcIntervalMinutes || prev.autoCalcIntervalMinutes || 15,
+        customPriceAlertEnabled: config.customPriceAlertEnabled !== undefined ? config.customPriceAlertEnabled : prev.customPriceAlertEnabled,
+        customPriceAlertTarget: config.customPriceAlertTarget !== undefined ? config.customPriceAlertTarget : prev.customPriceAlertTarget,
         chartTimeframe: config.chartTimeframe || prev.chartTimeframe,
         chartRange: config.chartRange || prev.chartRange,
         barSpacing: config.barSpacing || prev.barSpacing,
@@ -64,6 +68,8 @@ export const ConfigDrawer = ({ config, onClose, onConfigSaved }) => {
         s3: parseFloat(formData.s3),
         autoCalculatePivot: formData.autoCalculatePivot,
         autoCalcIntervalMinutes: parseInt(formData.autoCalcIntervalMinutes, 10) || 15,
+        customPriceAlertEnabled: Boolean(formData.customPriceAlertEnabled),
+        customPriceAlertTarget: formData.customPriceAlertTarget !== '' ? parseFloat(formData.customPriceAlertTarget) : 0,
         pivotType: formData.pivotType,
         tolerance: parseFloat(formData.tolerance),
         retriggerDistance: parseFloat(formData.retriggerDistance),
@@ -282,6 +288,89 @@ export const ConfigDrawer = ({ config, onClose, onConfigSaved }) => {
                 <span className="text-[10px] text-slate-500 block mt-1">
                   Adjust candle thickness and horizontal zoom dynamically for all screenshot captures.
                 </span>
+              </div>
+            </div>
+
+            {/* Custom Specific Target Price Alert */}
+            <div className={`p-4 rounded-2xl border transition-all ${
+              formData.customPriceAlertEnabled
+                ? 'bg-amber-500/10 border-amber-500/40 shadow-lg shadow-amber-500/10'
+                : 'bg-slate-950/70 border-slate-800'
+            } space-y-3.5`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                    <span>🎯</span> Custom Specific Price Alert
+                  </h4>
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    {formData.customPriceAlertEnabled ? 'Alarm, notification & screenshot armed on touch' : 'Alert currently paused / disabled'}
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.customPriceAlertEnabled}
+                    onChange={(e) => handleChange('customPriceAlertEnabled', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-10 h-5.5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-amber-500"></div>
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-medium text-slate-300 mb-1.5">
+                  Target Price ($ USD)
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-amber-400 font-black text-sm font-mono">$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="e.g. 4410.00"
+                    value={formData.customPriceAlertTarget}
+                    onChange={(e) => handleChange('customPriceAlertTarget', e.target.value)}
+                    className="w-full pl-8 pr-3 py-2.5 bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl text-sm font-mono font-black text-white focus:outline-none focus:ring-1 focus:ring-amber-400 transition-all tabular-nums"
+                  />
+                </div>
+              </div>
+
+              {/* Quick Adjustment Chips */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[10px] font-mono text-slate-400 font-bold">PRESETS:</span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const res = await api.getTicker();
+                      if (res.data?.data?.price) {
+                        handleChange('customPriceAlertTarget', res.data.data.price.toFixed(2));
+                      }
+                    } catch (e) {}
+                  }}
+                  className="px-2 py-0.5 rounded-md bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 font-mono text-[10px] font-bold transition-all"
+                >
+                  ⚡ Live Price
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const base = parseFloat(formData.customPriceAlertTarget) || 0;
+                    handleChange('customPriceAlertTarget', (base + 10).toFixed(2));
+                  }}
+                  className="px-2 py-0.5 rounded-md bg-slate-900 hover:bg-slate-800 border border-slate-800 text-emerald-400 font-mono text-[10px] font-bold transition-all"
+                >
+                  +10
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const base = parseFloat(formData.customPriceAlertTarget) || 0;
+                    handleChange('customPriceAlertTarget', Math.max(0, base - 10).toFixed(2));
+                  }}
+                  className="px-2 py-0.5 rounded-md bg-slate-900 hover:bg-slate-800 border border-slate-800 text-rose-400 font-mono text-[10px] font-bold transition-all"
+                >
+                  -10
+                </button>
               </div>
             </div>
 

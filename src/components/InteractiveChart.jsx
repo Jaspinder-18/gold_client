@@ -178,14 +178,15 @@ export const InteractiveChart = ({ marketData, config }) => {
     priceLinesRef.current = [];
 
     const linesToDraw = [
-      { price: config.r3, title: 'R3 RESISTANCE', color: '#f59e0b', lineWidth: 2, lineStyle: 2 },
-      { price: config.r2, title: 'R2 RESISTANCE', color: '#f97316', lineWidth: 2, lineStyle: 2 },
-      { price: config.s2, title: 'S2 SUPPORT', color: '#10b981', lineWidth: 2, lineStyle: 2 },
-      { price: config.s3, title: 'S3 SUPPORT', color: '#14b8a6', lineWidth: 2, lineStyle: 2 }
+      { price: config.r3, title: 'R3 RESISTANCE', color: '#ffd700', lineWidth: 1.5, lineStyle: 2 },
+      { price: config.r2, title: 'R2 RESISTANCE', color: '#ffd700', lineWidth: 1.5, lineStyle: 2 },
+      { price: config.s2, title: 'S2 SUPPORT', color: '#ffd700', lineWidth: 1.5, lineStyle: 2 },
+      { price: config.s3, title: 'S3 SUPPORT', color: '#ffd700', lineWidth: 1.5, lineStyle: 2 }
     ];
 
+    // 1. Draw Reference Yellow Pivot Lines
     linesToDraw.forEach(item => {
-      if (item.price && !isNaN(item.price)) {
+      if (item.price && !isNaN(item.price) && item.price > 0) {
         try {
           const line = candleSeriesRef.current.createPriceLine({
             price: item.price,
@@ -199,7 +200,23 @@ export const InteractiveChart = ({ marketData, config }) => {
         } catch (e) {}
       }
     });
-  }, [config?.r3, config?.r2, config?.s2, config?.s3]);
+
+    // 2. Draw Solid WHITE Custom Price Line
+    const customTarget = Number(config.customPriceAlertTarget);
+    if (config.customPriceAlertEnabled && customTarget > 0) {
+      try {
+        const customLine = candleSeriesRef.current.createPriceLine({
+          price: customTarget,
+          color: '#ffffff', // SOLID WHITE LINE FOR CUSTOM TARGET
+          lineWidth: 2.5,
+          lineStyle: 0, // Solid
+          axisLabelVisible: true,
+          title: `🎯 CUSTOM PRICE ($${customTarget.toFixed(2)})`
+        });
+        priceLinesRef.current.push(customLine);
+      } catch (e) {}
+    }
+  }, [config?.r3, config?.r2, config?.s2, config?.s3, config?.customPriceAlertTarget, config?.customPriceAlertEnabled]);
 
   const handleZoom = (delta) => {
     if (!chartRef.current) return;

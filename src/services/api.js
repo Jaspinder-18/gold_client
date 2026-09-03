@@ -13,8 +13,11 @@ export const api = {
   getAlerts: (params = {}) => axios.get(`${API_BASE}/alerts`, { params }),
   getAlertById: (id) => axios.get(`${API_BASE}/alerts/${id}`),
   deleteAlert: (id) => axios.delete(`${API_BASE}/alerts/${id}`),
-  getAlertStates: () => axios.get(`${API_BASE}/alerts/states`),
-  resetAlertLevel: (level) => axios.post(`${API_BASE}/alerts/reset/${level}`),
+  getAlertStates: (symbol) => axios.get(`${API_BASE}/alerts/states`, { params: { symbol } }),
+  getCustomPriceAlert: (symbol) => axios.get(`${API_BASE}/alerts/custom`, { params: { symbol } }),
+  setCustomPriceAlert: (data) => axios.post(`${API_BASE}/alerts/custom`, data),
+  deleteCustomPriceAlert: (symbol) => axios.delete(`${API_BASE}/alerts/custom/${symbol || ''}`),
+  resetAlertLevel: (level, symbol) => axios.post(`${API_BASE}/alerts/reset`, { level, symbol }),
   getScreenshotStatus: () => axios.get(`${API_BASE}/alerts/screenshots/status`),
   cleanupScreenshots: () => axios.post(`${API_BASE}/alerts/screenshots/cleanup`),
 

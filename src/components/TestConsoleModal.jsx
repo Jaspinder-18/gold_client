@@ -84,53 +84,18 @@ export const TestConsoleModal = ({ config, onClose, onAlertGenerated }) => {
         {/* Form Body */}
         <div className="py-5 space-y-5">
           
-          {/* Level Selector */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
-              Select Test Alert Level
-            </label>
-            <div className="grid grid-cols-4 gap-2">
-              {levels.map(lvl => {
-                const styling = getLevelColor(lvl);
-                const isSelected = selectedLevel === lvl;
-                const price = config?.[lvl.toLowerCase()] || 0;
-
-                return (
-                  <button
-                    key={lvl}
-                    type="button"
-                    onClick={() => {
-                      setSelectedLevel(lvl);
-                      setCustomPrice(price ? price.toString() : '');
-                    }}
-                    className={`py-2.5 px-3 rounded-xl border text-xs font-bold transition-all flex flex-col items-center gap-0.5 ${
-                      isSelected
-                        ? 'bg-gold-500 text-black border-gold-400 shadow-lg shadow-gold-500/20'
-                        : 'bg-dark-950/70 border-dark-800 text-slate-300 hover:border-dark-700'
-                    }`}
-                  >
-                    <span>{lvl}</span>
-                    <span className={`text-[10px] font-mono ${isSelected ? 'text-black/80 font-bold' : 'text-slate-400'}`}>
-                      ${price.toFixed(2)}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Simulated Price Input */}
+          {/* Custom Price Alert Tester */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-              Simulated Touch Price (USD)
+              Simulated Custom Touch Price ($ USD)
             </label>
             <input
               type="number"
               step="0.01"
               value={customPrice}
               onChange={(e) => setCustomPrice(e.target.value)}
-              placeholder={`Default: $${config?.[selectedLevel.toLowerCase()]?.toFixed(2) || '4442.30'}`}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-dark-950 border border-dark-800 text-slate-100 font-mono text-sm focus:outline-none focus:border-gold-500 transition-colors"
+              placeholder={`e.g. $${config?.customPriceAlertTarget || '3450.50'}`}
+              className="w-full px-3.5 py-3 rounded-xl bg-dark-950 border border-dark-800 text-slate-100 font-mono font-bold text-sm focus:outline-none focus:border-emerald-500 transition-colors"
             />
           </div>
 
@@ -139,17 +104,17 @@ export const TestConsoleModal = ({ config, onClose, onAlertGenerated }) => {
             type="button"
             onClick={handleRunTest}
             disabled={isSubmitting}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-gold-500 to-amber-500 hover:from-gold-400 hover:to-amber-400 text-black font-extrabold text-sm shadow-lg shadow-gold-500/20 flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-sm shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
           >
             {isSubmitting ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Running Alert Pipeline...</span>
+                <span>Running Custom Alert Pipeline...</span>
               </>
             ) : (
               <>
                 <Play className="w-4 h-4 fill-current" />
-                <span>Trigger {selectedLevel} Alert Pipeline</span>
+                <span>Trigger Custom Price Alert Pipeline</span>
               </>
             )}
           </button>

@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { HeaderStatus } from './components/HeaderStatus';
 import { LivePriceCard } from './components/LivePriceCard';
-import { PivotLevelsGrid } from './components/PivotLevelsGrid';
-import { DebugValidationPanel } from './components/DebugValidationPanel';
-import { PreviousLevelsTable } from './components/PreviousLevelsTable';
+import { CustomLevelCard } from './components/CustomLevelCard';
 import { AlertHistoryTable } from './components/AlertHistoryTable';
 import { ScreenshotGallery } from './components/ScreenshotGallery';
 import { ScreenshotModal } from './components/ScreenshotModal';
@@ -19,9 +17,7 @@ export function App() {
   const [symbolConfig, setSymbolConfig] = useState(null);
   const [marketData, setMarketData] = useState(null);
   const [pivotState, setPivotState] = useState(null);
-  const [previousSessions, setPreviousSessions] = useState([]);
   const [isSoundEnabled, setIsSoundEnabled] = useState(audioAlert.enabled);
-
 
   const [config, setConfig] = useState({
     symbol: 'XAUUSD',
@@ -33,19 +29,19 @@ export function App() {
     retriggerDistance: 1.00,
     enabled: true,
     telegramAlertsEnabled: true,
+    customPriceAlertEnabled: false,
+    customPriceAlertTarget: 0,
+    customPriceAlertStatus: 'INACTIVE',
     chartTimeframe: '15',
     chartRange: '1D',
-    customChartUrl: '',
-    monitoredLevels: ['R3', 'R2', 'S2', 'S3']
+    customChartUrl: ''
   });
 
-  const [distances, setDistances] = useState({});
   const [alertStates, setAlertStates] = useState({});
   const [alerts, setAlerts] = useState([]);
   const [systemHealth, setSystemHealth] = useState(null);
   const [isSocketConnected, setIsSocketConnected] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
-  const [isAutoCalculating, setIsAutoCalculating] = useState(false);
 
   // Modals & Drawers state
   const [selectedAlertForModal, setSelectedAlertForModal] = useState(null);
@@ -53,109 +49,76 @@ export function App() {
   const [isConfigDrawerOpen, setIsConfigDrawerOpen] = useState(false);
   const [isSymbolSearchOpen, setIsSymbolSearchOpen] = useState(false);
 
-  // Fetch historical sessions
-  const loadHistoricalSessions = useCallback(async (sym) => {
+  // Initial Load from Central Online Database
+  const loadInitialData = useCallback(async (sym) => {
     try {
-      const res = await api.getPivotHistory({ symbol: sym || activeSymbol, count: 10 });
-      if (res.data?.data && Array.isArray(res.data.data)) {
-        setPreviousSessions(res.data.data);
-      }
-    } catch (err) {
-      console.warn('Could not load historical sessions', err);
-    }
-  }, [activeSymbol]);
+      const targetSym = sym || activeSymbol;
 
-  // Fetch initial REST data
-  const loadInitialData = useCallback(async () => {
-    try {
-      const [symRes, tickerRes, configRes, alertsRes, healthRes, statesRes] = await Promise.allSettled([
-        api.getActiveSymbol(),
+      const [tickerRes, configRes, alertsRes, symRes] = await Promise.allSettled([
         api.getTicker(),
-        api.getConfig(),
-        api.getAlerts({ limit: 6 }),
-        api.getSystemHealth(),
-        api.getAlertStates()
+        api.getConfig(targetSym),
+        api.getAlerts({ limit: 6, symbol: targetSym }),
+        api.getActiveSymbol()
       ]);
 
-      let currentSym = 'XAUUSD';
       if (symRes.status === 'fulfilled' && symRes.value.data?.data) {
-        const data = symRes.value.data.data;
-        currentSym = data.symbol || 'XAUUSD';
-        setActiveSymbol(currentSym);
-        setSymbolConfig(data.config);
-        if (data.pivotState) setPivotState(data.pivotState);
-        if (data.market) setMarketData(data.market);
+        setSymbolConfig(symRes.value.data.data);
       }
 
       if (tickerRes.status === 'fulfilled' && tickerRes.value.data?.data) {
         setMarketData(tickerRes.value.data.data);
-        if (tickerRes.value.data.data.distances) {
-          setDistances(tickerRes.value.data.data.distances);
-        }
       }
 
       if (configRes.status === 'fulfilled' && configRes.value.data?.data) {
-        setConfig(configRes.value.data.data);
+        const loadedCfg = configRes.value.data.data;
+        setConfig(prev => ({
+          ...prev,
+          ...loadedCfg,
+          symbol: loadedCfg.symbol || targetSym
+        }));
       }
 
       if (alertsRes.status === 'fulfilled' && alertsRes.value.data?.data) {
         setAlerts(alertsRes.value.data.data.slice(0, 6));
       }
-
-      if (healthRes.status === 'fulfilled' && healthRes.value.data?.status) {
-        setSystemHealth(healthRes.value.data.status);
-      }
-
-      if (statesRes.status === 'fulfilled' && statesRes.value.data?.data) {
-        setAlertStates(statesRes.value.data.data);
-      }
-
-      loadHistoricalSessions(currentSym);
     } catch (err) {
-      console.error('Error loading initial terminal data', err);
+      console.error('Failed to load initial data', err);
     }
-  }, [loadHistoricalSessions]);
+  }, [activeSymbol]);
 
+  // Initial Boot & Socket Connection
   useEffect(() => {
-    loadInitialData();
+    loadInitialData(activeSymbol);
 
-    // Polling health fallback every 15s
-    const healthInterval = setInterval(() => {
-      api.getSystemHealth().then(r => setSystemHealth(r.data?.status)).catch(() => {});
-    }, 15000);
+    const checkHealth = async () => {
+      try {
+        const res = await api.getSystemHealth();
+        setSystemHealth(res.data?.data);
+      } catch (e) {}
+    };
+    checkHealth();
+    const healthInterval = setInterval(checkHealth, 15000);
 
-    // Initialize real-time Socket.IO subscriptions
+    // Initialize WebSockets
     const cleanupSocket = initSocketListeners({
       onConnect: () => setIsSocketConnected(true),
       onDisconnect: () => setIsSocketConnected(false),
       onInitialState: (state) => {
         if (state.activeSymbol) {
           setActiveSymbol(state.activeSymbol);
-          loadHistoricalSessions(state.activeSymbol);
         }
         if (state.symbolConfig) setSymbolConfig(state.symbolConfig);
         if (state.market) setMarketData(state.market);
         if (state.config) setConfig(state.config);
         if (state.pivotState) setPivotState(state.pivotState);
-        if (state.distances) setDistances(state.distances);
         if (state.alertStates) setAlertStates(state.alertStates);
       },
-      onSymbolActive: (data) => {
+      onSymbolChanged: (data) => {
         if (data.symbol) {
           setActiveSymbol(data.symbol);
-          loadHistoricalSessions(data.symbol);
-        }
-        if (data.config) {
-          setSymbolConfig(data.config);
-          setConfig(prev => ({ ...prev, ...data.config, symbol: data.symbol }));
-        }
-        if (data.pivotState) setPivotState(data.pivotState);
-        if (data.market) setMarketData(data.market);
-        if (data.alertStates) setAlertStates(data.alertStates);
-      },
-      onPivotState: (state) => {
-        if (state && (!state.symbol || state.symbol === activeSymbol)) {
-          setPivotState(state);
+          if (data.config) setSymbolConfig(data.config);
+          if (data.market) setMarketData(data.market);
+          if (data.pivotState) setPivotState(data.pivotState);
         }
       },
       onPivotUpdated: (data) => {
@@ -172,51 +135,35 @@ export function App() {
             r1: data.r1,
             s1: data.s1
           }));
-          loadHistoricalSessions(data.symbol || activeSymbol);
-          // Reset alert states to READY immediately for the new pivot period
-          setAlertStates({
-            R3: { status: 'READY', touchCount: 0, maxTouches: 2 },
-            R2: { status: 'READY', touchCount: 0, maxTouches: 2 },
-            R1: { status: 'READY', touchCount: 0, maxTouches: 2 },
-            PIVOT: { status: 'READY', touchCount: 0, maxTouches: 2 },
-            S1: { status: 'READY', touchCount: 0, maxTouches: 2 },
-            S2: { status: 'READY', touchCount: 0, maxTouches: 2 },
-            S3: { status: 'READY', touchCount: 0, maxTouches: 2 }
-          });
         }
       },
       onConfigUpdate: (newConfig) => {
         if (newConfig && (!newConfig.symbol || newConfig.symbol === activeSymbol)) {
-          setConfig(newConfig);
+          setConfig(prev => ({ ...prev, ...newConfig }));
         }
       },
       onMarketTick: (data) => {
         if (!data.rawSymbol || data.rawSymbol === activeSymbol) {
           setMarketData(data);
-          if (data.distances) setDistances(data.distances);
         }
       },
       onAlertTriggered: (payload) => {
         if (payload.event) {
-          setAlerts(prev => [payload.event, ...prev.filter(a => a._id !== payload.event._id)].slice(0, 6));
+          setAlerts(prev => [payload.event, ...prev.filter(a => a._id !== payload.event._id && a.eventId !== payload.event.eventId)].slice(0, 6));
           // Trigger Loud Alarm Sound on Web App Terminal
           audioAlert.playAlarm({ durationSeconds: 6 });
         }
         if (payload.alertStates) {
           setAlertStates(payload.alertStates);
         }
-        if (payload.distances) {
-          setDistances(payload.distances);
-        }
       }
-
     });
 
     return () => {
       clearInterval(healthInterval);
       cleanupSocket();
     };
-  }, [loadInitialData, loadHistoricalSessions, activeSymbol]);
+  }, [loadInitialData, activeSymbol]);
 
   // Handle Switching Active Symbol
   const handleSelectSymbol = async (newSym) => {
@@ -229,7 +176,6 @@ export function App() {
         setPivotState(data.pivotState);
         if (data.market) setMarketData(data.market);
         if (data.config) setConfig(prev => ({ ...prev, ...data.config, symbol: data.symbol }));
-        loadHistoricalSessions(data.symbol);
       }
     } catch (err) {
       alert('Failed to switch symbol: ' + (err.response?.data?.error || err.message));
@@ -242,23 +188,24 @@ export function App() {
     return latestAlertWithScreenshot?.timestamp || latestAlertWithScreenshot?.createdAt || null;
   }, [alerts]);
 
-  // Compute detected level
+  // Compute detected level header string
   const detectedLevel = useMemo(() => {
-    for (const [lvl, st] of Object.entries(alertStates)) {
-      if (st?.status === 'TRIGGERED' || st === 'TRIGGERED') {
-        const targetPrice = pivotState?.[lvl.toLowerCase()] || config[lvl.toLowerCase()];
-        return `🚨 ${lvl} ACTIVE TOUCH ($${targetPrice ? Number(targetPrice).toFixed(2) : ''})`;
-      }
-    }
-    for (const [lvl, dist] of Object.entries(distances)) {
-      if (dist != null && dist <= (config.tolerance || 0.20)) {
-        return `⚡ NEAR ${lvl.toUpperCase()}`;
-      }
-    }
-    return `MONITORING ${activeSymbol} LEVELS`;
-  }, [alertStates, distances, config, pivotState, activeSymbol]);
+    const customPrice = config?.customPriceAlertTarget;
+    const isEnabled = config?.customPriceAlertEnabled;
+    const isTriggered = config?.customPriceAlertStatus === 'TRIGGERED' || alertStates?.CUSTOM?.status === 'TRIGGERED';
 
-  // Handle dynamic timeframe switch (affects screenshot only)
+    if (isTriggered && customPrice > 0) {
+      return `TOUCHED: $${Number(customPrice).toFixed(2)}`;
+    }
+
+    if (isEnabled && customPrice > 0) {
+      return `TARGET: $${Number(customPrice).toFixed(2)}`;
+    }
+
+    return 'STANDBY';
+  }, [alertStates, config]);
+
+  // Handle dynamic timeframe switch (updates config on server so screenshots use it)
   const handleTimeframeChange = async (newTf) => {
     try {
       setConfig(prev => ({ ...prev, chartTimeframe: newTf }));
@@ -268,39 +215,21 @@ export function App() {
     }
   };
 
-  // Delete screenshot alert handler
-  const handleDeleteAlert = async (alertId) => {
-    try {
-      await api.deleteAlert(alertId);
-      setAlerts(prev => prev.filter(a => a._id !== alertId));
-      if (selectedAlertForModal?._id === alertId) {
-        setSelectedAlertForModal(null);
-      }
-    } catch (err) {
-      alert('Failed to delete screenshot: ' + (err.response?.data?.error || err.message));
-    }
-  };
-
-  // On-demand manual screenshot capture
+  // Handle manual screenshot capture
   const handleManualCapture = async () => {
     setIsCapturing(true);
     try {
-      const selectedTf = String(config.chartTimeframe || '15');
-      const selectedRange = String(config.chartRange || '1D');
-      const selectedBarSpacing = Number(config.barSpacing || 22);
-
       const res = await api.captureScreenshot({
         symbol: activeSymbol,
-        level: 'MANUAL',
-        timeframe: selectedTf,
-        range: selectedRange,
-        barSpacing: selectedBarSpacing
+        timeframe: config.chartTimeframe || '15',
+        range: config.chartRange || '1D',
+        barSpacing: config.barSpacing || 22
       });
 
       if (res.data?.data) {
-        const newEvent = res.data.data;
-        setAlerts(prev => [newEvent, ...prev.filter(a => a._id !== newEvent._id)].slice(0, 6));
-        setSelectedAlertForModal(newEvent);
+        const newEvt = res.data.data;
+        setAlerts(prev => [newEvt, ...prev.filter(a => a._id !== newEvt._id)].slice(0, 6));
+        setSelectedAlertForModal(newEvt);
       }
     } catch (err) {
       alert('Failed to capture TradingView screenshot: ' + (err.response?.data?.error || err.message));
@@ -309,19 +238,15 @@ export function App() {
     }
   };
 
-  // Live recalculate from current market data
-  const handleAutoCalculatePivots = async () => {
-    setIsAutoCalculating(true);
+  const handleDeleteAlert = async (id) => {
     try {
-      const res = await api.autoCalculatePivots({ symbol: activeSymbol });
-      if (res.data?.data) {
-        setPivotState(res.data.data);
-        loadHistoricalSessions(activeSymbol);
+      await api.deleteAlert(id);
+      setAlerts(prev => prev.filter(a => a._id !== id && a.eventId !== id));
+      if (selectedAlertForModal?._id === id || selectedAlertForModal?.eventId === id) {
+        setSelectedAlertForModal(null);
       }
     } catch (err) {
-      console.error('Failed to auto-calculate pivot levels', err);
-    } finally {
-      setIsAutoCalculating(false);
+      alert('Failed to delete alert: ' + (err.response?.data?.error || err.message));
     }
   };
 
@@ -334,11 +259,10 @@ export function App() {
     }
   };
 
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-amber-400 selection:text-slate-950">
       
-      {/* Header & Status */}
+      {/* Header & Status (Contains Symbol Selector / Changer) */}
       <HeaderStatus
         activeSymbol={activeSymbol}
         symbolConfig={symbolConfig}
@@ -351,20 +275,20 @@ export function App() {
         onOpenSettings={() => setIsConfigDrawerOpen(true)}
       />
 
-
       {/* Main Terminal Body */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 space-y-6">
         
-        {/* Simple Top Row: Left Side Current Market, Right Side Target Levels */}
+        {/* Top 2-Column Row: Live Price & Screenshot Settings (Left) + Custom Price Selection (Right) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
           
-          {/* Left Side: Current Market Live Price Ticker & Timeframe Switcher */}
+          {/* Left: Live Price & Screenshot Settings Card */}
           <div className="h-full">
             <LivePriceCard
               marketData={marketData}
-              alertStates={alertStates}
               lastScreenshotTime={lastScreenshotTime}
               detectedLevel={detectedLevel}
+              customTargetPrice={config.customPriceAlertTarget}
+              customAlertStatus={config.customPriceAlertStatus}
               currentTimeframe={config.chartTimeframe || '15'}
               onTimeframeChange={handleTimeframeChange}
               onManualCapture={handleManualCapture}
@@ -372,38 +296,34 @@ export function App() {
             />
           </div>
 
-          {/* Right Side: R3, R2, S2, S3 Levels */}
+          {/* Right: Custom Price Selection & Alert Management Card */}
           <div className="h-full">
-            <PivotLevelsGrid
+            <CustomLevelCard
+              activeSymbol={activeSymbol}
+              marketData={marketData}
               config={config}
-              pivotState={pivotState}
               alertStates={alertStates}
-              currentPrice={marketData?.price}
-              onAutoCalc={handleAutoCalculatePivots}
-              isAutoCalculating={isAutoCalculating}
+              pivotState={pivotState}
+              onConfigUpdated={(updatedCfg) => {
+                setConfig(prev => ({ ...prev, ...updatedCfg }));
+              }}
+              onAlertGenerated={(newEvent) => {
+                setAlerts(prev => [newEvent, ...prev.filter(a => a._id !== newEvent._id)].slice(0, 6));
+                setSelectedAlertForModal(newEvent);
+              }}
             />
           </div>
 
         </div>
 
-        {/* 10 Previous Daily Sessions Table with Multi-Day History */}
-        <PreviousLevelsTable previousSessions={previousSessions} />
-
-        {/* Developer Audit & Validation Inspector */}
-        <DebugValidationPanel
-          activeSymbol={activeSymbol}
-          pivotState={pivotState}
-          onRecalculate={handleAutoCalculatePivots}
-        />
-
-        {/* Below: Screenshot History Gallery (Latest Max 6 Captures) */}
+        {/* Screenshot History Gallery (Latest Max 6 Captures with White Custom Price Line) */}
         <ScreenshotGallery
           alerts={alerts}
           onViewScreenshot={(evt) => setSelectedAlertForModal(evt)}
           onDeleteScreenshot={handleDeleteAlert}
         />
 
-        {/* Below: Touch Levels Alert History Table */}
+        {/* Alert Events History Table */}
         <AlertHistoryTable
           alerts={alerts}
           onSelectAlert={(evt) => setSelectedAlertForModal(evt)}
@@ -413,7 +333,7 @@ export function App() {
 
       </main>
 
-      {/* Symbol Search Modal */}
+      {/* Symbol Search / Changer Modal */}
       <SymbolSearchModal
         isOpen={isSymbolSearchOpen}
         onClose={() => setIsSymbolSearchOpen(false)}
@@ -421,59 +341,39 @@ export function App() {
         onSelectSymbol={handleSelectSymbol}
       />
 
-      {/* Modals & Drawers */}
-      {isCapturing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-amber-500/40 rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl space-y-4">
-            <div className="w-12 h-12 border-3 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <div>
-              <h3 className="text-sm font-black text-white uppercase tracking-wider">
-                Capturing TradingView Chart
-              </h3>
-              <p className="text-xs text-slate-400 font-mono mt-1">
-                Rendering {activeSymbol} on TradingView with {config.chartTimeframe || '15'}M interval...
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
+      {/* Full Screenshot View Modal */}
       {selectedAlertForModal && (
         <ScreenshotModal
           alert={selectedAlertForModal}
           onClose={() => setSelectedAlertForModal(null)}
-          onDeleteAlert={handleDeleteAlert}
+          onDelete={() => handleDeleteAlert(selectedAlertForModal._id || selectedAlertForModal.eventId)}
         />
       )}
 
+      {/* Alert Pipeline Test Console Modal */}
       {isTestConsoleOpen && (
         <TestConsoleModal
           config={config}
           onClose={() => setIsTestConsoleOpen(false)}
-          onAlertGenerated={(newEvent) => {
-            setAlerts(prev => [newEvent, ...prev].slice(0, 6));
-            setSelectedAlertForModal(newEvent);
+          onAlertGenerated={(evt) => {
+            setAlerts(prev => [evt, ...prev.filter(a => a._id !== evt._id)].slice(0, 6));
+            setSelectedAlertForModal(evt);
           }}
         />
       )}
 
-      {isConfigDrawerOpen && (
-        <ConfigDrawer
-          config={config}
-          onClose={() => setIsConfigDrawerOpen(false)}
-          onConfigSaved={(updated) => {
-            setConfig(updated);
-          }}
-        />
-      )}
-
-      {/* Footer */}
-      <footer className="border-t border-slate-900 bg-slate-950 py-4 px-6 text-center text-xs text-slate-500 font-mono">
-        MULTI-ASSET TRADINGVIEW ALERT TERMINAL · DYNAMIC PREVIOUS COMPLETED OHLC PIVOT ENGINE · REAL-TIME AUTOMATION
-      </footer>
+      {/* Configuration Drawer */}
+      <ConfigDrawer
+        isOpen={isConfigDrawerOpen}
+        onClose={() => setIsConfigDrawerOpen(false)}
+        config={config}
+        activeSymbol={activeSymbol}
+        onSave={async (newConfig) => {
+          setConfig(prev => ({ ...prev, ...newConfig }));
+        }}
+      />
 
     </div>
   );
 }
-
 export default App;
