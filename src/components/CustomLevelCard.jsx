@@ -21,6 +21,8 @@ export const CustomLevelCard = ({
   config,
   alertStates,
   pivotState,
+  telegramAlertsEnabled = true,
+  onToggleTelegram,
   onConfigUpdated,
   onAlertGenerated
 }) => {
@@ -347,10 +349,28 @@ export const CustomLevelCard = ({
             )}
           </div>
 
-          {/* Chart Indicator Notice */}
-          <div className="pt-3 border-t border-slate-800/80 flex items-center gap-2 text-[11px] font-mono text-slate-300">
-            <span className="w-3 h-3 rounded-full bg-white border border-slate-300 inline-block shadow-sm"></span>
-            <span>Displays as a <strong>WHITE horizontal line</strong> on chart</span>
+          {/* Chart Indicator Notice & Telegram Toggle */}
+          <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2 text-[11px] font-mono text-slate-300">
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-white border border-slate-300 inline-block shadow-sm"></span>
+              <span>Displays as <strong>WHITE line</strong></span>
+            </div>
+
+            {/* Direct Telegram Switch */}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-slate-400 font-mono">Telegram Alerts:</span>
+              <button
+                type="button"
+                onClick={onToggleTelegram}
+                className={`px-2.5 py-0.5 rounded-lg border text-[10px] font-mono font-bold transition-all cursor-pointer ${
+                  telegramAlertsEnabled
+                    ? 'bg-sky-500/20 text-sky-300 border-sky-500/40'
+                    : 'bg-slate-950 text-slate-500 border-slate-800'
+                }`}
+              >
+                {telegramAlertsEnabled ? '✈️ ON' : 'OFF'}
+              </button>
+            </div>
           </div>
         </div>
 

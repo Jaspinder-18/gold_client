@@ -259,13 +259,25 @@ export function App() {
     }
   };
 
+  const handleToggleTelegram = async () => {
+    const nextVal = !Boolean(config?.telegramAlertsEnabled !== false);
+    try {
+      setConfig(prev => ({ ...prev, telegramAlertsEnabled: nextVal }));
+      await api.updateConfig({ telegramAlertsEnabled: nextVal });
+    } catch (err) {
+      console.error('Failed to toggle Telegram alerts', err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-amber-400 selection:text-slate-950">
       
-      {/* Header & Status (Contains Symbol Selector & Settings) */}
+      {/* Header & Status (Contains Symbol Selector, Telegram Quick Toggle & Settings) */}
       <HeaderStatus
         activeSymbol={activeSymbol}
         symbolConfig={symbolConfig}
+        telegramAlertsEnabled={config?.telegramAlertsEnabled !== false}
+        onToggleTelegram={handleToggleTelegram}
         onOpenSymbolSearch={() => setIsSymbolSearchOpen(true)}
         onOpenSettings={() => setIsConfigDrawerOpen(true)}
       />
@@ -299,6 +311,8 @@ export function App() {
               config={config}
               alertStates={alertStates}
               pivotState={pivotState}
+              telegramAlertsEnabled={config?.telegramAlertsEnabled !== false}
+              onToggleTelegram={handleToggleTelegram}
               onConfigUpdated={(updatedCfg) => {
                 setConfig(prev => ({ ...prev, ...updatedCfg }));
               }}

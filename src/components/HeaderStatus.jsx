@@ -4,6 +4,8 @@ import { Activity, Sliders, Search, ChevronDown } from 'lucide-react';
 export const HeaderStatus = ({
   activeSymbol = 'XAUUSD',
   symbolConfig = {},
+  telegramAlertsEnabled = true,
+  onToggleTelegram,
   onOpenSymbolSearch,
   onOpenSettings
 }) => {
@@ -48,8 +50,27 @@ export const HeaderStatus = ({
           </div>
         </div>
 
-        {/* Right Side: ONLY the Settings Button */}
-        <div>
+        {/* Right Side: Telegram Quick ON/OFF Toggle + Settings Button */}
+        <div className="flex items-center gap-2.5">
+          {/* Telegram One-Click ON/OFF Toggle Button */}
+          <button
+            type="button"
+            onClick={onToggleTelegram}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border transition-all duration-200 shadow-md cursor-pointer active:scale-95 text-xs font-mono font-black ${
+              telegramAlertsEnabled
+                ? 'bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border-sky-500/40 shadow-sky-500/10'
+                : 'bg-slate-900/90 hover:bg-slate-800 text-slate-400 border-slate-700/80 hover:text-slate-200'
+            }`}
+            title={`Telegram notifications are currently ${telegramAlertsEnabled ? 'ENABLED' : 'DISABLED'}. Click to toggle.`}
+          >
+            <span className={`w-2 h-2 rounded-full ${telegramAlertsEnabled ? 'bg-sky-400 animate-pulse' : 'bg-slate-600'}`}></span>
+            <span>TELEGRAM:</span>
+            <span className={`font-black ${telegramAlertsEnabled ? 'text-sky-300' : 'text-slate-500'}`}>
+              {telegramAlertsEnabled ? 'ON' : 'OFF'}
+            </span>
+          </button>
+
+          {/* Settings Button */}
           <button
             type="button"
             onClick={onOpenSettings}
