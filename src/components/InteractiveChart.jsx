@@ -177,31 +177,7 @@ export const InteractiveChart = ({ marketData, config }) => {
     });
     priceLinesRef.current = [];
 
-    const linesToDraw = [
-      { price: config.r3, title: 'R3 RESISTANCE', color: '#ffd700', lineWidth: 1.5, lineStyle: 2 },
-      { price: config.r2, title: 'R2 RESISTANCE', color: '#ffd700', lineWidth: 1.5, lineStyle: 2 },
-      { price: config.s2, title: 'S2 SUPPORT', color: '#ffd700', lineWidth: 1.5, lineStyle: 2 },
-      { price: config.s3, title: 'S3 SUPPORT', color: '#ffd700', lineWidth: 1.5, lineStyle: 2 }
-    ];
-
-    // 1. Draw Reference Yellow Pivot Lines
-    linesToDraw.forEach(item => {
-      if (item.price && !isNaN(item.price) && item.price > 0) {
-        try {
-          const line = candleSeriesRef.current.createPriceLine({
-            price: item.price,
-            color: item.color,
-            lineWidth: item.lineWidth,
-            lineStyle: item.lineStyle,
-            axisLabelVisible: true,
-            title: `${item.title} ($${item.price.toFixed(2)})`
-          });
-          priceLinesRef.current.push(line);
-        } catch (e) {}
-      }
-    });
-
-    // 2. Draw Solid WHITE Custom Price Line
+    // Draw ONLY Solid WHITE Custom Price Line (Zero Yellow Lines)
     const customTarget = Number(config.customPriceAlertTarget);
     if (config.customPriceAlertEnabled && customTarget > 0) {
       try {
@@ -216,7 +192,7 @@ export const InteractiveChart = ({ marketData, config }) => {
         priceLinesRef.current.push(customLine);
       } catch (e) {}
     }
-  }, [config?.r3, config?.r2, config?.s2, config?.s3, config?.customPriceAlertTarget, config?.customPriceAlertEnabled]);
+  }, [config?.customPriceAlertTarget, config?.customPriceAlertEnabled]);
 
   const handleZoom = (delta) => {
     if (!chartRef.current) return;

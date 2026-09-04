@@ -1,24 +1,15 @@
 import React from 'react';
-import { Activity, Radio, ShieldCheck, Send, Database, Sliders, PlayCircle, Search, ChevronDown, Volume2, VolumeX } from 'lucide-react';
+import { Activity, Sliders, Search, ChevronDown } from 'lucide-react';
 
 export const HeaderStatus = ({
   activeSymbol = 'XAUUSD',
   symbolConfig = {},
-  systemHealth,
-  isSocketConnected,
-  isSoundEnabled = true,
-  onToggleSound,
   onOpenSymbolSearch,
-  onOpenTestConsole,
   onOpenSettings
 }) => {
-  const marketFeed = systemHealth?.marketFeed || {};
-  const tg = systemHealth?.telegram || {};
-
-
   return (
     <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl sticky top-0 z-40 px-4 lg:px-8 py-3.5 shadow-2xl">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
         
         {/* Brand & Market Identity + Symbol Switcher Button */}
         <div className="flex items-center gap-3.5">
@@ -57,85 +48,17 @@ export const HeaderStatus = ({
           </div>
         </div>
 
-        {/* System Health Indicators */}
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          
-          {/* Market Feed Status */}
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border font-semibold transition-all duration-300 ${
-            marketFeed.connected
-              ? 'bg-slate-900/80 text-emerald-300 border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.1)]'
-              : 'bg-rose-950/40 text-rose-300 border-rose-800/60'
-          }`}>
-            <span className={`w-2 h-2 rounded-full ${marketFeed.connected ? 'bg-emerald-400 shadow-[0_0_8px_#10b981]' : 'bg-rose-500'}`}></span>
-            <span>Market Feed</span>
-          </div>
-
-          {/* WebSocket Status */}
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border font-semibold transition-all duration-300 ${
-            isSocketConnected
-              ? 'bg-slate-900/80 text-slate-200 border-slate-700/80'
-              : 'bg-rose-950/40 text-rose-300 border-rose-800/60'
-          }`}>
-            <Radio className={`w-3.5 h-3.5 ${isSocketConnected ? 'text-emerald-400' : 'text-rose-400'}`} />
-            <span>WebSocket</span>
-          </div>
-
-          {/* Alert Engine Status */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/80 text-slate-200 border border-slate-700/80 font-semibold">
-            <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-            <span>Alert Engine</span>
-          </div>
-
-          {/* Telegram Status */}
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border font-semibold ${
-            tg.connected !== false
-              ? 'bg-slate-900/80 text-slate-200 border-slate-700/80'
-              : 'bg-amber-950/40 text-amber-300 border-amber-800/60'
-          }`} title={tg.botUsername ? `@${tg.botUsername}` : 'Telegram Bot'}>
-            <Send className="w-3.5 h-3.5 text-sky-400" />
-            <span>Telegram Bot</span>
-          </div>
-
-          {/* Database Status */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/80 text-slate-200 border border-slate-700/80 font-semibold">
-            <Database className="w-3.5 h-3.5 text-purple-400" />
-            <span>MongoDB</span>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2 ml-1.5">
-            {/* Audio Alarm Toggle */}
-            <button
-              onClick={onToggleSound}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-semibold transition-all duration-200 shadow-sm cursor-pointer active:scale-95 ${
-                isSoundEnabled
-                  ? 'bg-amber-500/15 text-amber-300 border-amber-500/40 hover:bg-amber-500/25 shadow-amber-500/10'
-                  : 'bg-slate-900/80 text-slate-400 border-slate-800 hover:text-slate-200'
-              }`}
-              title={isSoundEnabled ? 'Audio Alarms Enabled (Click to Mute)' : 'Audio Alarms Muted (Click to Unmute)'}
-            >
-              {isSoundEnabled ? <Volume2 className="w-3.5 h-3.5 text-amber-400" /> : <VolumeX className="w-3.5 h-3.5 text-slate-500" />}
-              <span className="text-xs">{isSoundEnabled ? 'Alarm ON' : 'Muted'}</span>
-            </button>
-
-            <button
-              onClick={onOpenTestConsole}
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-extrabold transition-all duration-200 shadow-lg shadow-amber-500/25 active:scale-95 cursor-pointer"
-            >
-              <PlayCircle className="w-4 h-4 text-slate-950 stroke-[2.5]" />
-              <span>Test Alert</span>
-            </button>
-
-            <button
-              onClick={onOpenSettings}
-              className="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 hover:border-amber-500/40 transition-all duration-200 shadow-sm cursor-pointer active:scale-95"
-              title="System Configuration"
-            >
-              <Sliders className="w-4 h-4" />
-            </button>
-          </div>
-
-
+        {/* Right Side: ONLY the Settings Button */}
+        <div>
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/80 hover:border-amber-500/40 transition-all duration-200 shadow-sm cursor-pointer active:scale-95 text-xs font-bold font-mono"
+            title="Screenshot & Alert Settings"
+          >
+            <Sliders className="w-4 h-4 text-amber-400" />
+            <span>Settings</span>
+          </button>
         </div>
 
       </div>

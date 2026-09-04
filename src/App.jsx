@@ -262,16 +262,11 @@ export function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-amber-400 selection:text-slate-950">
       
-      {/* Header & Status (Contains Symbol Selector / Changer) */}
+      {/* Header & Status (Contains Symbol Selector & Settings) */}
       <HeaderStatus
         activeSymbol={activeSymbol}
         symbolConfig={symbolConfig}
-        systemHealth={systemHealth}
-        isSocketConnected={isSocketConnected}
-        isSoundEnabled={isSoundEnabled}
-        onToggleSound={handleToggleSound}
         onOpenSymbolSearch={() => setIsSymbolSearchOpen(true)}
-        onOpenTestConsole={() => setIsTestConsoleOpen(true)}
         onOpenSettings={() => setIsConfigDrawerOpen(true)}
       />
 
