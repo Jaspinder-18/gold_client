@@ -8,6 +8,7 @@ import { ScreenshotModal } from './components/ScreenshotModal';
 import { TestConsoleModal } from './components/TestConsoleModal';
 import { ConfigDrawer } from './components/ConfigDrawer';
 import { SymbolSearchModal } from './components/SymbolSearchModal';
+import { IncomingAlertModal } from './components/IncomingAlertModal';
 import { api } from './services/api';
 import { initSocketListeners } from './services/socket';
 import { audioAlert } from './utils/audioAlert';
@@ -45,6 +46,7 @@ export function App() {
   const [isCapturing, setIsCapturing] = useState(false);
 
   // Modals & Drawers state
+  const [incomingAlertModal, setIncomingAlertModal] = useState(null);
   const [selectedAlertForModal, setSelectedAlertForModal] = useState(null);
   const [isTestConsoleOpen, setIsTestConsoleOpen] = useState(false);
   const [isConfigDrawerOpen, setIsConfigDrawerOpen] = useState(false);
@@ -182,9 +184,12 @@ export function App() {
         if (event) {
           setAlerts(prev => [event, ...prev.filter(a => a._id !== event._id && a.eventId !== event.eventId)].slice(0, 6));
           
+          // Pop up interactive Price Touch Alert Modal with Cancel and View Chart options
+          setIncomingAlertModal(event);
+
           // Trigger Loud Alarm Sound
           if (isSoundEnabled) {
-            audioAlert.playAlarm({ durationSeconds: 6 });
+            audioAlert.playAlarm({ durationSeconds: 20 });
           }
 
           // Trigger Web Desktop Push Notification if permission granted
@@ -315,6 +320,19 @@ export function App() {
     }
   };
 
+  const handleCancelIncomingAlert = useCallback(() => {
+    audioAlert.stop();
+    setIncomingAlertModal(null);
+  }, []);
+
+  const handleViewChartIncomingAlert = useCallback((alertToView) => {
+    audioAlert.stop();
+    setIncomingAlertModal(null);
+    if (alertToView) {
+      setSelectedAlertForModal(alertToView);
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-amber-400 selection:text-slate-950">
       
@@ -362,7 +380,7 @@ export function App() {
               onToggleSound={handleToggleSound}
               onAlertGenerated={(newEvent) => {
                 setAlerts(prev => [newEvent, ...prev.filter(a => a._id !== newEvent._id)].slice(0, 6));
-                setSelectedAlertForModal(newEvent);
+                setIncomingAlertModal(newEvent);
               }}
             />
           </div>
@@ -385,6 +403,15 @@ export function App() {
         />
 
       </main>
+
+      {/* Incoming Price Touch Alert Modal (Cancel or View Chart) */}
+      {incomingAlertModal && (
+        <IncomingAlertModal
+          alert={incomingAlertModal}
+          onCancel={handleCancelIncomingAlert}
+          onViewChart={handleViewChartIncomingAlert}
+        />
+      )}
 
       {/* Symbol Search / Changer Modal */}
       <SymbolSearchModal
@@ -410,7 +437,7 @@ export function App() {
           onClose={() => setIsTestConsoleOpen(false)}
           onAlertGenerated={(evt) => {
             setAlerts(prev => [evt, ...prev.filter(a => a._id !== evt._id)].slice(0, 6));
-            setSelectedAlertForModal(evt);
+            setIncomingAlertModal(evt);
           }}
         />
       )}
