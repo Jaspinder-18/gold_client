@@ -34,6 +34,13 @@ export const initSocketListeners = (callbacks = {}) => {
   const handleAlert = (payload) => callbacks.onAlertTriggered && callbacks.onAlertTriggered(payload);
   socket.on('alert:triggered', handleAlert);
   socket.on('alert_triggered', handleAlert);
+  socket.on('custom_alert:triggered', handleAlert);
+
+  const handleAlertList = (payload) => callbacks.onAlertListUpdated && callbacks.onAlertListUpdated(payload);
+  socket.on('custom_alert:list_updated', handleAlertList);
+  socket.on('custom_alert:created', handleAlertList);
+  socket.on('custom_alert:deleted', handleAlertList);
+  socket.on('custom_alert:removed', handleAlertList);
 
   const handleSymbolActive = (data) => callbacks.onSymbolActive && callbacks.onSymbolActive(data);
   socket.on('symbol:active', handleSymbolActive);
@@ -63,6 +70,11 @@ export const initSocketListeners = (callbacks = {}) => {
     socket.off('market_tick', handleTick);
     socket.off('alert:triggered', handleAlert);
     socket.off('alert_triggered', handleAlert);
+    socket.off('custom_alert:triggered', handleAlert);
+    socket.off('custom_alert:list_updated', handleAlertList);
+    socket.off('custom_alert:created', handleAlertList);
+    socket.off('custom_alert:deleted', handleAlertList);
+    socket.off('custom_alert:removed', handleAlertList);
     socket.off('symbol:active', handleSymbolActive);
     socket.off('pivot:state', handlePivotState);
     socket.off('pivotUpdated', handlePivotUpdated);

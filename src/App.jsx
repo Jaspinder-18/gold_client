@@ -18,6 +18,7 @@ export function App() {
   const [marketData, setMarketData] = useState(null);
   const [pivotState, setPivotState] = useState(null);
   const [isSoundEnabled, setIsSoundEnabled] = useState(audioAlert.enabled);
+  const [activeAlerts, setActiveAlerts] = useState([]);
 
   const [config, setConfig] = useState({
     symbol: 'XAUUSD',
@@ -49,16 +50,30 @@ export function App() {
   const [isConfigDrawerOpen, setIsConfigDrawerOpen] = useState(false);
   const [isSymbolSearchOpen, setIsSymbolSearchOpen] = useState(false);
 
+  // Refresh active alerts list for symbol
+  const refreshActiveAlerts = useCallback(async (sym) => {
+    try {
+      const targetSym = sym || activeSymbol;
+      const res = await api.getActiveAlerts(targetSym);
+      if (res.data?.data) {
+        setActiveAlerts(res.data.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch active alerts', err);
+    }
+  }, [activeSymbol]);
+
   // Initial Load from Central Online Database
   const loadInitialData = useCallback(async (sym) => {
     try {
       const targetSym = sym || activeSymbol;
 
-      const [tickerRes, configRes, alertsRes, symRes] = await Promise.allSettled([
+      const [tickerRes, configRes, alertsRes, symRes, activeAlertsRes] = await Promise.allSettled([
         api.getTicker(),
         api.getConfig(targetSym),
         api.getAlerts({ limit: 6, symbol: targetSym }),
-        api.getActiveSymbol()
+        api.getActiveSymbol(),
+        api.getActiveAlerts(targetSym)
       ]);
 
       if (symRes.status === 'fulfilled' && symRes.value.data?.data) {
@@ -80,6 +95,10 @@ export function App() {
 
       if (alertsRes.status === 'fulfilled' && alertsRes.value.data?.data) {
         setAlerts(alertsRes.value.data.data.slice(0, 6));
+      }
+
+      if (activeAlertsRes.status === 'fulfilled' && activeAlertsRes.value.data?.data) {
+        setActiveAlerts(activeAlertsRes.value.data.data);
       }
     } catch (err) {
       console.error('Failed to load initial data', err);
@@ -111,6 +130,7 @@ export function App() {
         if (state.market) setMarketData(state.market);
         if (state.config) setConfig(state.config);
         if (state.pivotState) setPivotState(state.pivotState);
+        if (state.activeAlerts) setActiveAlerts(state.activeAlerts);
         if (state.alertStates) setAlertStates(state.alertStates);
       },
       onSymbolChanged: (data) => {
@@ -119,6 +139,16 @@ export function App() {
           if (data.config) setSymbolConfig(data.config);
           if (data.market) setMarketData(data.market);
           if (data.pivotState) setPivotState(data.pivotState);
+          if (data.activeAlerts) setActiveAlerts(data.activeAlerts);
+        }
+      },
+      onAlertListUpdated: (payload) => {
+        if (payload && (!payload.symbol || payload.symbol === activeSymbol)) {
+          if (payload.activeAlerts) {
+            setActiveAlerts(payload.activeAlerts);
+          } else {
+            refreshActiveAlerts(activeSymbol);
+          }
         }
       },
       onPivotUpdated: (data) => {
@@ -148,11 +178,35 @@ export function App() {
         }
       },
       onAlertTriggered: (payload) => {
-        if (payload.event) {
-          setAlerts(prev => [payload.event, ...prev.filter(a => a._id !== payload.event._id && a.eventId !== payload.event.eventId)].slice(0, 6));
-          // Trigger Loud Alarm Sound on Web App Terminal
-          audioAlert.playAlarm({ durationSeconds: 6 });
+        const event = payload.event || payload;
+        if (event) {
+          setAlerts(prev => [event, ...prev.filter(a => a._id !== event._id && a.eventId !== event.eventId)].slice(0, 6));
+          
+          // Trigger Loud Alarm Sound
+          if (isSoundEnabled) {
+            audioAlert.playAlarm({ durationSeconds: 6 });
+          }
+
+          // Trigger Web Desktop Push Notification if permission granted
+          if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+            try {
+              const targetVal = event.customPrice || event.levelPrice || event.currentPrice;
+              new Notification(`🚨 ${event.symbol} TOUCHED TARGET @ $${Number(event.currentPrice).toFixed(2)}`, {
+                body: `Target: $${Number(targetVal).toFixed(2)} · Price Touch Triggered!`,
+                icon: '/favicon.ico',
+                tag: event.eventId || event._id
+              });
+            } catch (e) {}
+          }
         }
+
+        // Auto-remove triggered alert from active list in UI immediately
+        if (payload.alertId) {
+          setActiveAlerts(prev => prev.filter(a => (a._id || a.id) !== payload.alertId));
+        } else if (payload.activeAlerts) {
+          setActiveAlerts(payload.activeAlerts);
+        }
+
         if (payload.alertStates) {
           setAlertStates(payload.alertStates);
         }
@@ -163,7 +217,7 @@ export function App() {
       clearInterval(healthInterval);
       cleanupSocket();
     };
-  }, [loadInitialData, activeSymbol]);
+  }, [loadInitialData, activeSymbol, refreshActiveAlerts, isSoundEnabled]);
 
   // Handle Switching Active Symbol
   const handleSelectSymbol = async (newSym) => {
@@ -176,6 +230,7 @@ export function App() {
         setPivotState(data.pivotState);
         if (data.market) setMarketData(data.market);
         if (data.config) setConfig(prev => ({ ...prev, ...data.config, symbol: data.symbol }));
+        refreshActiveAlerts(data.symbol);
       }
     } catch (err) {
       alert('Failed to switch symbol: ' + (err.response?.data?.error || err.message));
@@ -190,22 +245,13 @@ export function App() {
 
   // Compute detected level header string
   const detectedLevel = useMemo(() => {
-    const customPrice = config?.customPriceAlertTarget;
-    const isEnabled = config?.customPriceAlertEnabled;
-    const isTriggered = config?.customPriceAlertStatus === 'TRIGGERED' || alertStates?.CUSTOM?.status === 'TRIGGERED';
-
-    if (isTriggered && customPrice > 0) {
-      return `TOUCHED: $${Number(customPrice).toFixed(2)}`;
+    if (activeAlerts.length > 0) {
+      return `${activeAlerts.length} TARGETS ARMED`;
     }
-
-    if (isEnabled && customPrice > 0) {
-      return `TARGET: $${Number(customPrice).toFixed(2)}`;
-    }
-
     return 'STANDBY';
-  }, [alertStates, config]);
+  }, [activeAlerts]);
 
-  // Handle dynamic timeframe switch (updates config on server so screenshots use it)
+  // Handle dynamic timeframe switch
   const handleTimeframeChange = async (newTf) => {
     try {
       setConfig(prev => ({ ...prev, chartTimeframe: newTf }));
@@ -272,7 +318,7 @@ export function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-amber-400 selection:text-slate-950">
       
-      {/* Header & Status (Contains Symbol Selector, Telegram Quick Toggle & Settings) */}
+      {/* Header & Status */}
       <HeaderStatus
         activeSymbol={activeSymbol}
         symbolConfig={symbolConfig}
@@ -285,7 +331,7 @@ export function App() {
       {/* Main Terminal Body */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 space-y-6">
         
-        {/* Top 2-Column Row: Live Price & Screenshot Settings (Left) + Custom Price Selection (Right) */}
+        {/* Top 2-Column Row: Live Price & Screenshot Settings (Left) + Multi-Alert Manager (Right) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
           
           {/* Left: Live Price & Screenshot Settings Card */}
@@ -294,8 +340,8 @@ export function App() {
               marketData={marketData}
               lastScreenshotTime={lastScreenshotTime}
               detectedLevel={detectedLevel}
-              customTargetPrice={config.customPriceAlertTarget}
-              customAlertStatus={config.customPriceAlertStatus}
+              customTargetPrice={activeAlerts.length > 0 ? activeAlerts[0].targetPrice : 0}
+              customAlertStatus={activeAlerts.length > 0 ? 'ACTIVE' : 'INACTIVE'}
               currentTimeframe={config.chartTimeframe || '15'}
               onTimeframeChange={handleTimeframeChange}
               onManualCapture={handleManualCapture}
@@ -303,19 +349,17 @@ export function App() {
             />
           </div>
 
-          {/* Right: Custom Price Selection & Alert Management Card */}
+          {/* Right: Multi-Alert Management Card (Create, View, Delete Multiple Alerts) */}
           <div className="h-full">
             <CustomLevelCard
               activeSymbol={activeSymbol}
               marketData={marketData}
-              config={config}
-              alertStates={alertStates}
-              pivotState={pivotState}
+              activeAlerts={activeAlerts}
+              onAlertsChanged={() => refreshActiveAlerts(activeSymbol)}
               telegramAlertsEnabled={config?.telegramAlertsEnabled !== false}
               onToggleTelegram={handleToggleTelegram}
-              onConfigUpdated={(updatedCfg) => {
-                setConfig(prev => ({ ...prev, ...updatedCfg }));
-              }}
+              isSoundEnabled={isSoundEnabled}
+              onToggleSound={handleToggleSound}
               onAlertGenerated={(newEvent) => {
                 setAlerts(prev => [newEvent, ...prev.filter(a => a._id !== newEvent._id)].slice(0, 6));
                 setSelectedAlertForModal(newEvent);
@@ -325,7 +369,7 @@ export function App() {
 
         </div>
 
-        {/* Screenshot History Gallery (Latest Max 6 Captures with White Custom Price Line) */}
+        {/* Screenshot History Gallery (Latest Max 6 Captures with Target Price Lines) */}
         <ScreenshotGallery
           alerts={alerts}
           onViewScreenshot={(evt) => setSelectedAlertForModal(evt)}

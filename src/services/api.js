@@ -9,20 +9,33 @@ export const api = {
   getKlines: (count = 100) => axios.get(`${API_BASE}/market/klines?count=${count}`),
   getSystemHealth: () => axios.get(`${API_BASE}/market/health`),
 
-  // Alert endpoints
+  // Multi-Price Alert Endpoints
+  getActiveAlerts: (symbol) => axios.get(`${API_BASE}/alerts/custom/list`, { params: { symbol } }),
+  createAlert: (data) => axios.post(`${API_BASE}/alerts/custom/create`, data),
+  deleteAlertById: (id, symbol) => axios.delete(`${API_BASE}/alerts/custom/${id}`, { params: { symbol } }),
+  clearAllAlerts: (symbol) => axios.post(`${API_BASE}/alerts/custom/clear`, { symbol }),
+
+  // Alert History & System
   getAlerts: (params = {}) => axios.get(`${API_BASE}/alerts`, { params }),
   getAlertById: (id) => axios.get(`${API_BASE}/alerts/${id}`),
   deleteAlert: (id) => axios.delete(`${API_BASE}/alerts/${id}`),
   getAlertStates: (symbol) => axios.get(`${API_BASE}/alerts/states`, { params: { symbol } }),
-  getCustomPriceAlert: (symbol) => axios.get(`${API_BASE}/alerts/custom`, { params: { symbol } }),
-  setCustomPriceAlert: (data) => axios.post(`${API_BASE}/alerts/custom`, data),
-  deleteCustomPriceAlert: (symbol) => axios.delete(`${API_BASE}/alerts/custom/${symbol || ''}`),
   resetAlertLevel: (level, symbol) => axios.post(`${API_BASE}/alerts/reset`, { level, symbol }),
   getScreenshotStatus: () => axios.get(`${API_BASE}/alerts/screenshots/status`),
   cleanupScreenshots: () => axios.post(`${API_BASE}/alerts/screenshots/cleanup`),
 
+  // Legacy Single Alert Endpoints (Backward Compatibility)
+  getCustomPriceAlert: (symbol) => axios.get(`${API_BASE}/alerts/custom`, { params: { symbol } }),
+  setCustomPriceAlert: (data) => axios.post(`${API_BASE}/alerts/custom`, data),
+  deleteCustomPriceAlert: (symbol) => axios.delete(`${API_BASE}/alerts/custom`, { params: { symbol } }),
+
+  // Firebase Cloud Messaging (FCM) Endpoints
+  registerFcmToken: (data) => axios.post(`${API_BASE}/alerts/fcm/register`, data),
+  unregisterFcmToken: (token) => axios.post(`${API_BASE}/alerts/fcm/unregister`, { token }),
+  testFcmPush: (token) => axios.post(`${API_BASE}/alerts/fcm/test`, { token }),
+
   // Configuration & Historical Levels
-  getConfig: () => axios.get(`${API_BASE}/config`),
+  getConfig: (symbol) => axios.get(`${API_BASE}/config`, { params: symbol ? { symbol } : {} }),
   updateConfig: (data) => axios.put(`${API_BASE}/config`, data),
   calculatePivots: (data) => axios.post(`${API_BASE}/config/calculate`, data),
   autoCalculatePivots: (data = {}) => axios.post(`${API_BASE}/config/auto-calculate`, data),
