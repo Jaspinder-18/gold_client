@@ -2,7 +2,12 @@ import React from 'react';
 import { X, Download, Send, AlertCircle, Info, Calendar, DollarSign, Crosshair, ZoomIn, Trash2 } from 'lucide-react';
 import { formatPrice, formatDateTime, getLevelColor } from '../utils/formatters';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+const getScreenshotUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  const base = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/+$/, '') : '';
+  return `${base}${path.startsWith('/') ? '' : '/'}${path}`;
+};
 
 export const ScreenshotModal = ({ alert, onClose, onDeleteAlert }) => {
   if (!alert) return null;
@@ -10,9 +15,7 @@ export const ScreenshotModal = ({ alert, onClose, onDeleteAlert }) => {
   const [isImgLoaded, setIsImgLoaded] = React.useState(false);
   const styling = getLevelColor(alert.level);
   const isResistance = alert.level?.startsWith('R');
-  const screenshotUrl = alert.screenshotPath?.startsWith('http')
-    ? alert.screenshotPath
-    : `${API_BASE_URL}${alert.screenshotPath}`;
+  const screenshotUrl = getScreenshotUrl(alert.screenshotPath);
 
   const handleDelete = () => {
     if (window.confirm(`Are you sure you want to delete this screenshot for ${alert.level}?`)) {

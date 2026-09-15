@@ -2,7 +2,12 @@ import React from 'react';
 import { Image, ExternalLink, Clock, Send, Camera, Trash2 } from 'lucide-react';
 import { formatPrice, formatTime, getLevelColor } from '../utils/formatters';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+const getScreenshotUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  const base = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/+$/, '') : '';
+  return `${base}${path.startsWith('/') ? '' : '/'}${path}`;
+};
 
 export const ScreenshotGallery = ({ alerts = [], onViewScreenshot, onDeleteScreenshot }) => {
   const alertsWithImages = alerts.filter(a => a.screenshotPath).slice(0, 6);
@@ -26,9 +31,7 @@ export const ScreenshotGallery = ({ alerts = [], onViewScreenshot, onDeleteScree
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {alertsWithImages.map(evt => {
           const styling = getLevelColor(evt.level);
-          const screenshotUrl = evt.screenshotPath?.startsWith('http')
-            ? evt.screenshotPath
-            : `${API_BASE_URL}${evt.screenshotPath}`;
+          const screenshotUrl = getScreenshotUrl(evt.screenshotPath);
 
           return (
             <div

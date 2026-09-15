@@ -9,6 +9,7 @@ import { TestConsoleModal } from './components/TestConsoleModal';
 import { ConfigDrawer } from './components/ConfigDrawer';
 import { SymbolSearchModal } from './components/SymbolSearchModal';
 import { IncomingAlertModal } from './components/IncomingAlertModal';
+import { InteractiveChart } from './components/InteractiveChart';
 import { api } from './services/api';
 import { initSocketListeners } from './services/socket';
 import { audioAlert } from './utils/audioAlert';
@@ -386,6 +387,15 @@ export function App() {
           </div>
 
         </div>
+
+        {/* Live TradingView Real-Time Interactive Chart */}
+        <InteractiveChart
+          activeSymbol={activeSymbol}
+          symbolConfig={symbolConfig}
+          marketData={marketData}
+          activeAlerts={activeAlerts}
+          config={config}
+        />
 
         {/* Screenshot History Gallery (Latest Max 6 Captures with Target Price Lines) */}
         <ScreenshotGallery
