@@ -116,6 +116,12 @@ export function App() {
       try {
         const res = await api.getSystemHealth();
         setSystemHealth(res.data?.data);
+        if (!isSocketConnected) {
+          const tickerRes = await api.getTicker();
+          if (tickerRes.data?.data) {
+            setMarketData(tickerRes.data.data);
+          }
+        }
       } catch (e) {}
     };
     checkHealth();
