@@ -5,8 +5,8 @@ const API_BASE = `${API_ORIGIN}/api`;
 
 export const api = {
   // Market endpoints
-  getTicker: () => axios.get(`${API_BASE}/market/ticker`),
-  getKlines: (count = 100) => axios.get(`${API_BASE}/market/klines?count=${count}`),
+  getTicker: (symbol = '') => axios.get(`${API_BASE}/market/ticker`, { params: symbol ? { symbol } : {} }),
+  getKlines: (count = 120, symbol = '', timeframe = '5') => axios.get(`${API_BASE}/market/klines`, { params: { count, symbol, timeframe } }),
   getSystemHealth: () => axios.get(`${API_BASE}/market/health`),
 
   // Multi-Price Alert Endpoints

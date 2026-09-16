@@ -52,9 +52,10 @@ export const InteractiveChart = ({
   // 1. Fetch & Populate Candles for Lightweight Mode
   const loadCandles = useCallback(async (sym, tf) => {
     setIsLoading(true);
+    const targetSym = sym || rawSym;
+    const targetTf = tf || selectedTf;
     try {
-      const res = await api.getKlines(120);
-      // Try fetching with specific symbol if supported
+      const res = await api.getKlines(120, targetSym, targetTf);
       const candles = res.data?.data || [];
       if (Array.isArray(candles) && candles.length > 0) {
         candlesDataRef.current = [...candles];
@@ -70,7 +71,7 @@ export const InteractiveChart = ({
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [rawSym, selectedTf]);
 
   // 2. Initialize Lightweight Charts Canvas
   useEffect(() => {
@@ -380,8 +381,16 @@ export const InteractiveChart = ({
           </div>
 
           {/* Zoom controls for lightweight canvas */}
-          {chartMode === 'lightweight' && (
+          {chartMode === 'lightweight' ? (
             <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => loadCandles(rawSym, selectedTf)}
+                className="p-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-amber-400 border border-slate-800 transition-colors cursor-pointer"
+                title="Refresh Candlesticks"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-amber-400' : ''}`} />
+              </button>
               <button
                 type="button"
                 onClick={() => handleZoom(-3)}
@@ -399,6 +408,20 @@ export const InteractiveChart = ({
                 <ZoomIn className="w-3.5 h-3.5" />
               </button>
             </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                const currentTf = selectedTf;
+                setSelectedTf('');
+                setTimeout(() => setSelectedTf(currentTf), 50);
+              }}
+              className="p-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-amber-400 border border-slate-800 transition-colors cursor-pointer flex items-center gap-1 text-xs font-mono"
+              title="Reload TradingView Chart"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span className="hidden md:inline text-[11px]">Reload TV</span>
+            </button>
           )}
 
         </div>
