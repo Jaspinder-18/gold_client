@@ -1,6 +1,13 @@
 import axios from 'axios';
 
-const API_ORIGIN = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/$/, '') : '';
+const RENDER_BACKEND_URL = 'https://gold-server-dbbq.onrender.com';
+
+const API_ORIGIN = import.meta.env.VITE_API_URL 
+  ? import.meta.env.VITE_API_URL.replace(/\/$/, '') 
+  : (typeof window !== 'undefined' && window.location.hostname === 'localhost' && window.location.port === '5001'
+      ? ''
+      : RENDER_BACKEND_URL);
+
 const API_BASE = `${API_ORIGIN}/api`;
 
 export const api = {

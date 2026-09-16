@@ -116,16 +116,24 @@ export function App() {
       try {
         const res = await api.getSystemHealth();
         setSystemHealth(res.data?.data);
-        if (!isSocketConnected) {
-          const tickerRes = await api.getTicker();
-          if (tickerRes.data?.data) {
-            setMarketData(tickerRes.data.data);
-          }
-        }
       } catch (e) {}
     };
     checkHealth();
     const healthInterval = setInterval(checkHealth, 15000);
+
+    // Fast 2-second continuous live ticker synchronization safety net
+    const fastTickerSync = async () => {
+      try {
+        const tickerRes = await api.getTicker(activeSymbol);
+        if (tickerRes.data?.data?.price) {
+          setMarketData(prev => ({
+            ...(prev || {}),
+            ...tickerRes.data.data
+          }));
+        }
+      } catch (e) {}
+    };
+    const tickerInterval = setInterval(fastTickerSync, 2000);
 
     // Initialize WebSockets
     const cleanupSocket = initSocketListeners({
@@ -227,6 +235,7 @@ export function App() {
 
     return () => {
       clearInterval(healthInterval);
+      clearInterval(tickerInterval);
       cleanupSocket();
     };
   }, [loadInitialData, activeSymbol, refreshActiveAlerts, isSoundEnabled]);

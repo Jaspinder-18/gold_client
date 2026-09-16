@@ -1,14 +1,14 @@
 import { io } from 'socket.io-client';
 
-// Connect to backend server using VITE_API_URL if defined, or port 5001 in local dev
-const API_ORIGIN = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/$/, '') : '';
-const SOCKET_URL = API_ORIGIN || (
-  (typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '3000'))
-    ? `http://${window.location.hostname}:5001`
-    : window.location.origin
-);
+const RENDER_BACKEND_URL = 'https://gold-server-dbbq.onrender.com';
 
-export const socket = io(SOCKET_URL, {
+const API_ORIGIN = import.meta.env.VITE_API_URL 
+  ? import.meta.env.VITE_API_URL.replace(/\/$/, '') 
+  : (typeof window !== 'undefined' && window.location.hostname === 'localhost' && window.location.port === '5001'
+      ? `http://${window.location.hostname}:5001`
+      : RENDER_BACKEND_URL);
+
+export const socket = io(API_ORIGIN, {
   transports: ['websocket', 'polling'],
   reconnection: true,
   reconnectionAttempts: Infinity,
