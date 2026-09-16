@@ -53,8 +53,8 @@ export const SymbolSearchModal = ({ isOpen, onClose, activeSymbol, onSelectSymbo
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-      <div className="w-full max-w-2xl bg-slate-950/95 border border-slate-800/90 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+    <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md animate-fade-in">
+      <div className="w-full max-w-xl bg-slate-950/95 border border-slate-800/90 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] my-auto">
         
         {/* Search Header */}
         <div className="p-4 border-b border-slate-800/80 bg-slate-900/50 flex items-center gap-3">

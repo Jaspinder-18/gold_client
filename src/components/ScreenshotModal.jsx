@@ -27,9 +27,9 @@ export const ScreenshotModal = ({ alert, onClose, onDeleteAlert }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-fade-in">
+    <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md animate-fade-in">
       <div
-        className="relative w-full max-w-5xl max-h-[94vh] overflow-y-auto rounded-2xl bg-dark-900 border border-dark-700 shadow-2xl flex flex-col"
+        className="relative w-full max-w-4xl max-h-[88vh] overflow-y-auto rounded-2xl bg-slate-950 border border-slate-800 shadow-2xl flex flex-col my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Top Bar */}

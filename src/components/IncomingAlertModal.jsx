@@ -41,18 +41,18 @@ export const IncomingAlertModal = ({
     : `${alert.level} PIVOT`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn">
+    <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn">
       {/* Glow aura */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="w-[450px] h-[450px] bg-amber-500/15 rounded-full blur-3xl animate-pulse"></div>
       </div>
 
       <div 
-        className="relative w-full max-w-lg rounded-3xl bg-slate-950 border-2 border-amber-500/60 shadow-[0_0_50px_rgba(245,158,11,0.25)] flex flex-col overflow-hidden animate-scaleUp"
+        className="relative w-full max-w-md sm:max-w-lg max-h-[88vh] rounded-3xl bg-slate-950 border-2 border-amber-500/60 shadow-[0_0_50px_rgba(245,158,11,0.25)] flex flex-col overflow-hidden my-auto animate-scaleUp"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Urgent Alert Banner */}
-        <div className="px-6 py-3.5 bg-gradient-to-r from-amber-500/25 via-amber-500/10 to-amber-500/25 border-b border-amber-500/30 flex items-center justify-between">
+        <div className="px-5 py-3.5 bg-gradient-to-r from-amber-500/25 via-amber-500/10 to-amber-500/25 border-b border-amber-500/30 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="relative flex items-center justify-center">
               <span className="animate-ping absolute inline-flex h-4 w-4 rounded-full bg-amber-400 opacity-75"></span>
@@ -76,8 +76,8 @@ export const IncomingAlertModal = ({
           </div>
         </div>
 
-        {/* Modal Content */}
-        <div className="p-6 sm:p-7 space-y-6">
+        {/* Scrollable Modal Content */}
+        <div className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1 overscroll-contain">
           {/* Symbol & Level Badges */}
           <div className="flex items-start justify-between">
             <div>
@@ -105,13 +105,13 @@ export const IncomingAlertModal = ({
           </div>
 
           {/* Price Metrics Card */}
-          <div className="rounded-2xl bg-slate-900/90 border border-slate-800 p-4 space-y-3.5 shadow-inner">
+          <div className="rounded-2xl bg-slate-900/90 border border-slate-800 p-3.5 sm:p-4 space-y-3 shadow-inner">
             <div className="flex items-baseline justify-between">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                 <ArrowUpRight className="w-3.5 h-3.5 text-amber-400" />
                 Touch Price:
               </span>
-              <span className="text-3xl font-black font-mono text-amber-400 tracking-tight tabular-nums drop-shadow-sm">
+              <span className="text-2xl sm:text-3xl font-black font-mono text-amber-400 tracking-tight tabular-nums drop-shadow-sm">
                 {formatPrice(currentPrice)}
               </span>
             </div>
@@ -148,7 +148,7 @@ export const IncomingAlertModal = ({
               <img
                 src={alert.screenshotUrl || (alert.screenshotPath?.startsWith('http') ? alert.screenshotPath : `https://gold-server-dbbq.onrender.com${alert.screenshotPath?.startsWith('/') ? '' : '/'}${alert.screenshotPath}`)}
                 alt="Price Touch Chart"
-                className="w-full h-44 object-cover hover:scale-105 transition-transform duration-300 cursor-pointer"
+                className="w-full h-36 sm:h-40 object-cover hover:scale-105 transition-transform duration-300 cursor-pointer"
                 onClick={() => onViewChart(alert)}
                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
               />
@@ -161,7 +161,7 @@ export const IncomingAlertModal = ({
             <button
               type="button"
               onClick={onCancel}
-              className="py-3.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 hover:border-slate-600 font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+              className="py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 hover:border-slate-600 font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer"
             >
               <X className="w-4 h-4 text-slate-400" />
               <span>Cancel</span>
@@ -171,7 +171,7 @@ export const IncomingAlertModal = ({
             <button
               type="button"
               onClick={() => onViewChart(alert)}
-              className="py-3.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 transition-all active:scale-[0.98] hover:shadow-amber-500/40"
+              className="py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 transition-all active:scale-[0.98] hover:shadow-amber-500/40 cursor-pointer"
             >
               <LineChart className="w-4 h-4" />
               <span>View Chart</span>

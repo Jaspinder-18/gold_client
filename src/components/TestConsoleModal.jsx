@@ -55,8 +55,8 @@ export const TestConsoleModal = ({ config, onClose, onAlertGenerated }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-      <div className="relative w-full max-w-lg rounded-2xl bg-dark-900 border border-dark-700 shadow-2xl p-6">
+    <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md">
+      <div className="relative w-full max-w-md max-h-[85vh] overflow-y-auto rounded-2xl bg-dark-900 border border-dark-700 shadow-2xl p-5 my-auto flex flex-col">
         
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-dark-800">
