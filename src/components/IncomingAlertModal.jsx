@@ -142,6 +142,19 @@ export const IncomingAlertModal = ({
             )}
           </div>
 
+          {/* Screenshot Image Preview (if available) */}
+          {(alert.screenshotPath || alert.screenshotUrl) && (
+            <div className="rounded-2xl overflow-hidden border border-slate-800 bg-slate-900 shadow-md">
+              <img
+                src={alert.screenshotUrl || (alert.screenshotPath?.startsWith('http') ? alert.screenshotPath : `https://gold-server-dbbq.onrender.com${alert.screenshotPath?.startsWith('/') ? '' : '/'}${alert.screenshotPath}`)}
+                alt="Price Touch Chart"
+                className="w-full h-44 object-cover hover:scale-105 transition-transform duration-300 cursor-pointer"
+                onClick={() => onViewChart(alert)}
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              />
+            </div>
+          )}
+
           {/* Action Buttons: Cancel and View Chart */}
           <div className="grid grid-cols-2 gap-3 pt-2">
             {/* Cancel / Dismiss Button */}

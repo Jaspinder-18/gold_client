@@ -61,5 +61,11 @@ export const api = {
     const payload = typeof params === 'string' ? { level: params } : params;
     return axios.post(`${API_BASE}/test/capture-screenshot`, payload);
   },
-  testTelegram: (customMessage) => axios.post(`${API_BASE}/test/telegram`, { customMessage })
+  testTelegram: (customMessage) => axios.post(`${API_BASE}/test/telegram`, { customMessage }),
+  getScreenshotUrl: (path) => {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const clean = path.startsWith('/') ? path : `/${path}`;
+    return `${API_ORIGIN}${clean}`;
+  }
 };

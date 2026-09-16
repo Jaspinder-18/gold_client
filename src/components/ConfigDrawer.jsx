@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, RefreshCw, Sliders, CheckCircle2, Monitor, Layers, Send } from 'lucide-react';
+import { X, Save, RefreshCw, Sliders, CheckCircle2, Monitor, Layers, Send, Volume2, Play, Square, BellRing } from 'lucide-react';
 import { api } from '../services/api';
+import { audioAlert, ALERT_SOUND_OPTIONS } from '../utils/audioAlert';
 
 const TIMEFRAMES = [
   { value: '1', label: '1M (1 Minute)' },
@@ -26,6 +27,10 @@ export const ConfigDrawer = ({ config, activeSymbol = 'XAUUSD', isOpen, onClose,
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [selectedSound, setSelectedSound] = useState(audioAlert.soundType);
+  const [soundVolume, setSoundVolume] = useState(audioAlert.volume);
+  const [soundEnabled, setSoundEnabled] = useState(audioAlert.enabled);
+  const [isPreviewing, setIsPreviewing] = useState(false);
 
   useEffect(() => {
     if (config) {
@@ -39,6 +44,9 @@ export const ConfigDrawer = ({ config, activeSymbol = 'XAUUSD', isOpen, onClose,
         customChartUrl: config.customChartUrl || ''
       });
     }
+    setSelectedSound(audioAlert.soundType);
+    setSoundVolume(audioAlert.volume);
+    setSoundEnabled(audioAlert.enabled);
   }, [config, activeSymbol]);
 
   if (!isOpen) return null;
@@ -47,10 +55,28 @@ export const ConfigDrawer = ({ config, activeSymbol = 'XAUUSD', isOpen, onClose,
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleTogglePreview = (soundId) => {
+    if (isPreviewing) {
+      audioAlert.stop();
+      setIsPreviewing(false);
+    } else {
+      setIsPreviewing(true);
+      audioAlert.playAlarm({ typeOverride: soundId, durationSeconds: 3 });
+      setTimeout(() => {
+        setIsPreviewing(false);
+      }, 3200);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
     setSaveSuccess(false);
+
+    // Save audio settings locally
+    audioAlert.setSoundType(selectedSound);
+    audioAlert.setVolume(soundVolume);
+    audioAlert.setEnabled(soundEnabled);
 
     try {
       const payload = {
@@ -222,6 +248,91 @@ export const ConfigDrawer = ({ config, activeSymbol = 'XAUUSD', isOpen, onClose,
                   />
                   <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
                 </label>
+              </div>
+            </div>
+
+            {/* Simplified Alarm Sound Settings (3 Sounds, 1 Vibrate, 1 Device Sound) */}
+            <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-amber-400">
+                  <Volume2 className="w-4 h-4 text-amber-400" />
+                  <span>Alarm Sound Settings</span>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={soundEnabled}
+                    onChange={(e) => setSoundEnabled(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
+                </label>
+              </div>
+
+              {/* Sound Options List */}
+              <div className="space-y-2">
+                {ALERT_SOUND_OPTIONS.map((opt) => {
+                  const isSelected = selectedSound === opt.id;
+                  return (
+                    <div
+                      key={opt.id}
+                      onClick={() => setSelectedSound(opt.id)}
+                      className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
+                        isSelected
+                          ? 'bg-amber-500/15 border-amber-500/50 text-white shadow-sm'
+                          : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                          isSelected ? 'border-amber-400 bg-amber-400' : 'border-slate-600'
+                        }`}>
+                          {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-slate-950"></div>}
+                        </div>
+                        <span className="text-xs font-mono font-bold">{opt.label}</span>
+                      </div>
+
+                      {opt.id !== 'VIBRATE_ONLY' && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTogglePreview(opt.id);
+                          }}
+                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 transition-colors"
+                          title="Preview Alarm Sound"
+                        >
+                          {isPreviewing && selectedSound === opt.id ? (
+                            <Square className="w-3.5 h-3.5 fill-amber-400" />
+                          ) : (
+                            <Play className="w-3.5 h-3.5 fill-amber-400" />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Volume Slider */}
+              <div className="pt-2 border-t border-slate-800">
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-xs font-mono font-bold text-slate-300">
+                    Alarm Volume
+                  </label>
+                  <span className="text-xs font-mono text-amber-400 font-bold">
+                    {Math.round(soundVolume * 100)}%
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="0.1"
+                  max="1.0"
+                  step="0.05"
+                  value={soundVolume}
+                  onChange={(e) => setSoundVolume(parseFloat(e.target.value))}
+                  className="w-full h-2 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                />
               </div>
             </div>
 
