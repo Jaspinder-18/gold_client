@@ -16,15 +16,32 @@ export const formatNumber = (num, decimals = 2) => {
 export const formatTime = (dateStr) => {
   if (!dateStr) return '--:--:--';
   const d = new Date(dateStr);
-  return d.toTimeString().split(' ')[0];
+  return d.toLocaleTimeString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    hour12: true,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
 };
 
 export const formatDateTime = (dateStr) => {
   if (!dateStr) return '--';
   const d = new Date(dateStr);
-  const dateFormatted = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-  const timeFormatted = d.toTimeString().split(' ')[0];
-  return `${dateFormatted} · ${timeFormatted}`;
+  const dateFormatted = d.toLocaleDateString('en-GB', {
+    timeZone: 'Asia/Kolkata',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+  const timeFormatted = d.toLocaleTimeString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    hour12: true,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+  return `${dateFormatted} · ${timeFormatted} IST`;
 };
 
 export const getLevelColor = (level) => {
