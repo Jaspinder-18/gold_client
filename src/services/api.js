@@ -37,6 +37,8 @@ export const api = {
   resetPassword: (data) => axios.post(`${API_BASE}/auth/reset-password`, data),
   getProfile: (email) => axios.get(`${API_BASE}/auth/profile`, { params: { email: String(email).trim().toLowerCase() } }),
   updateNotifications: (data) => axios.post(`${API_BASE}/auth/notifications`, data),
+  getDevices: (email) => axios.get(`${API_BASE}/auth/devices`, { params: { email: String(email).trim().toLowerCase() } }),
+  removeDevice: (email, token) => axios.post(`${API_BASE}/auth/devices/remove`, { email: String(email).trim().toLowerCase(), token }),
 
   // Alert History & System
   getAlerts: (params = {}) => axios.get(`${API_BASE}/alerts`, { params }),

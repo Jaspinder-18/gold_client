@@ -259,6 +259,54 @@ class AuthService {
   }
 
   /**
+   * Get all registered devices and FCM tokens for the current user
+   */
+  async getDevices() {
+    const user = this.getCurrentUser();
+    if (!user || !user.email) return { success: false, error: 'User not logged in.', devices: [] };
+
+    try {
+      const res = await api.getDevices(user.email);
+      if (res.data?.success && res.data?.data) {
+        return { 
+          success: true, 
+          devices: Array.isArray(res.data.data) ? res.data.data : [],
+          activeDevicesCount: res.data.activeDevicesCount || 0
+        };
+      }
+      return { success: false, error: res.data?.error || 'Failed to fetch devices.', devices: [] };
+    } catch (err) {
+      console.error('[AuthService] getDevices error:', err);
+      return { success: false, error: err.response?.data?.error || err.message, devices: [] };
+    }
+  }
+
+  /**
+   * Remove / unlink a device by FCM token
+   */
+  async removeDevice(token) {
+    const user = this.getCurrentUser();
+    if (!user || !user.email) return { success: false, error: 'User not logged in.' };
+
+    try {
+      const res = await api.removeDevice(user.email, token);
+      if (res.data?.success) {
+        // Refresh local user profile if deviceCount changed
+        await this.syncProfile();
+        return { 
+          success: true, 
+          message: res.data?.message || 'Device removed successfully.',
+          devices: res.data.data || []
+        };
+      }
+      return { success: false, error: res.data?.error || 'Failed to remove device.' };
+    } catch (err) {
+      console.error('[AuthService] removeDevice error:', err);
+      return { success: false, error: err.response?.data?.error || err.message };
+    }
+  }
+
+  /**
    * Logout user from this web session
    */
   async logout() {

@@ -25,7 +25,9 @@ export const HeaderStatus = ({
   currentUser = null,
   onOpenAuthModal,
   onLogout,
-  onToggleNotifications
+  onToggleNotifications,
+  activeTab = 'terminal',
+  onTabChange
 }) => {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -96,6 +98,44 @@ export const HeaderStatus = ({
               <span className="text-amber-400/90 font-semibold">Custom Price Alerts</span>
             </p>
           </div>
+        </div>
+
+        {/* Central Navigation Tabs (Terminal vs Connected Devices) */}
+        <div className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-2xl border border-slate-800 shadow-inner">
+          <button
+            type="button"
+            onClick={() => onTabChange && onTabChange('terminal')}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
+              activeTab === 'terminal'
+                ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black shadow-md shadow-amber-500/20'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <Activity className="w-3.5 h-3.5" />
+            <span>Terminal</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onTabChange && onTabChange('devices')}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
+              activeTab === 'devices'
+                ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black shadow-md shadow-amber-500/20'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <Smartphone className="w-3.5 h-3.5" />
+            <span>Devices</span>
+            {currentUser?.activeDevicesCount ? (
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold leading-none ${
+                activeTab === 'devices'
+                  ? 'bg-slate-950 text-amber-400'
+                  : 'bg-amber-500/20 text-amber-300'
+              }`}>
+                {currentUser.activeDevicesCount}
+              </span>
+            ) : null}
+          </button>
         </div>
 
         {/* Right Side: Telegram Toggle + User Auth Profile + Settings Button */}
@@ -207,6 +247,24 @@ export const HeaderStatus = ({
                       Controls alarms & pushes across all mobile & web devices logged into this email.
                     </p>
                   </div>
+
+                  {/* Connected Devices Manager Link */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsProfileDropdownOpen(false);
+                      if (onTabChange) onTabChange('devices');
+                    }}
+                    className="w-full py-2 px-3 rounded-xl bg-slate-900 hover:bg-amber-500/15 border border-slate-800 hover:border-amber-500/40 text-slate-300 hover:text-amber-300 text-xs font-mono font-bold flex items-center justify-between transition-all cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Smartphone className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Manage FCM Devices</span>
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-bold">
+                      {currentUser.activeDevicesCount || 0}
+                    </span>
+                  </button>
 
                   {/* Sign Out Button */}
                   <button

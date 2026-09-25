@@ -11,6 +11,7 @@ import { SymbolSearchModal } from './components/SymbolSearchModal';
 import { IncomingAlertModal } from './components/IncomingAlertModal';
 import { InteractiveChart } from './components/InteractiveChart';
 import { AuthModal } from './components/AuthModal';
+import { DevicesTab } from './components/DevicesTab';
 import { api } from './services/api';
 import { authService } from './services/auth';
 import { initSocketListeners } from './services/socket';
@@ -19,6 +20,7 @@ import { audioAlert } from './utils/audioAlert';
 export function App() {
   const [currentUser, setCurrentUser] = useState(() => authService.getCurrentUser());
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('terminal'); // 'terminal' | 'devices'
 
   const [activeSymbol, setActiveSymbol] = useState('XAUUSD');
   const [symbolConfig, setSymbolConfig] = useState(null);
@@ -404,74 +406,86 @@ export function App() {
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
         onLogout={handleLogout}
         onToggleNotifications={handleToggleNotifications}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
       />
 
       {/* Main Terminal Body */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 space-y-6">
         
-        {/* Top 2-Column Row: Live Price & Screenshot Settings (Left) + Multi-Alert Manager (Right) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-          
-          {/* Left: Live Price & Screenshot Settings Card */}
-          <div className="h-full">
-            <LivePriceCard
-              marketData={marketData}
-              lastScreenshotTime={lastScreenshotTime}
-              detectedLevel={detectedLevel}
-              customTargetPrice={activeAlerts.length > 0 ? activeAlerts[0].targetPrice : 0}
-              customAlertStatus={activeAlerts.length > 0 ? 'ACTIVE' : 'INACTIVE'}
-              currentTimeframe={config.chartTimeframe || '15'}
-              onTimeframeChange={handleTimeframeChange}
-              onManualCapture={handleManualCapture}
-              isCapturing={isCapturing}
-            />
-          </div>
+        {activeTab === 'devices' ? (
+          <DevicesTab
+            currentUser={currentUser}
+            onOpenAuthModal={() => setIsAuthModalOpen(true)}
+            onBackToTerminal={() => setActiveTab('terminal')}
+          />
+        ) : (
+          <>
+            {/* Top 2-Column Row: Live Price & Screenshot Settings (Left) + Multi-Alert Manager (Right) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+              
+              {/* Left: Live Price & Screenshot Settings Card */}
+              <div className="h-full">
+                <LivePriceCard
+                  marketData={marketData}
+                  lastScreenshotTime={lastScreenshotTime}
+                  detectedLevel={detectedLevel}
+                  customTargetPrice={activeAlerts.length > 0 ? activeAlerts[0].targetPrice : 0}
+                  customAlertStatus={activeAlerts.length > 0 ? 'ACTIVE' : 'INACTIVE'}
+                  currentTimeframe={config.chartTimeframe || '15'}
+                  onTimeframeChange={handleTimeframeChange}
+                  onManualCapture={handleManualCapture}
+                  isCapturing={isCapturing}
+                />
+              </div>
 
-          {/* Right: Multi-Alert Management Card (Create, View, Delete Multiple Alerts) */}
-          <div className="h-full">
-            <CustomLevelCard
+              {/* Right: Multi-Alert Management Card (Create, View, Delete Multiple Alerts) */}
+              <div className="h-full">
+                <CustomLevelCard
+                  activeSymbol={activeSymbol}
+                  marketData={marketData}
+                  activeAlerts={activeAlerts}
+                  onAlertsChanged={() => refreshActiveAlerts(activeSymbol)}
+                  telegramAlertsEnabled={config?.telegramAlertsEnabled !== false}
+                  onToggleTelegram={handleToggleTelegram}
+                  isSoundEnabled={isSoundEnabled}
+                  onToggleSound={handleToggleSound}
+                  currentUser={currentUser}
+                  onOpenAuthModal={() => setIsAuthModalOpen(true)}
+                  onAlertGenerated={(newEvent) => {
+                    setAlerts(prev => [newEvent, ...prev.filter(a => a._id !== newEvent._id)].slice(0, 6));
+                    setIncomingAlertModal(newEvent);
+                  }}
+                />
+              </div>
+
+            </div>
+
+            {/* Live TradingView Real-Time Interactive Chart */}
+            <InteractiveChart
               activeSymbol={activeSymbol}
+              symbolConfig={symbolConfig}
               marketData={marketData}
               activeAlerts={activeAlerts}
-              onAlertsChanged={() => refreshActiveAlerts(activeSymbol)}
-              telegramAlertsEnabled={config?.telegramAlertsEnabled !== false}
-              onToggleTelegram={handleToggleTelegram}
-              isSoundEnabled={isSoundEnabled}
-              onToggleSound={handleToggleSound}
-              currentUser={currentUser}
-              onOpenAuthModal={() => setIsAuthModalOpen(true)}
-              onAlertGenerated={(newEvent) => {
-                setAlerts(prev => [newEvent, ...prev.filter(a => a._id !== newEvent._id)].slice(0, 6));
-                setIncomingAlertModal(newEvent);
-              }}
+              config={config}
             />
-          </div>
 
-        </div>
+            {/* Screenshot History Gallery (Latest Max 6 Captures with Target Price Lines) */}
+            <ScreenshotGallery
+              alerts={alerts}
+              onViewScreenshot={(evt) => setSelectedAlertForModal(evt)}
+              onDeleteScreenshot={handleDeleteAlert}
+            />
 
-        {/* Live TradingView Real-Time Interactive Chart */}
-        <InteractiveChart
-          activeSymbol={activeSymbol}
-          symbolConfig={symbolConfig}
-          marketData={marketData}
-          activeAlerts={activeAlerts}
-          config={config}
-        />
-
-        {/* Screenshot History Gallery (Latest Max 6 Captures with Target Price Lines) */}
-        <ScreenshotGallery
-          alerts={alerts}
-          onViewScreenshot={(evt) => setSelectedAlertForModal(evt)}
-          onDeleteScreenshot={handleDeleteAlert}
-        />
-
-        {/* Alert Events History Table */}
-        <AlertHistoryTable
-          alerts={alerts}
-          onSelectAlert={(evt) => setSelectedAlertForModal(evt)}
-          onViewScreenshot={(evt) => setSelectedAlertForModal(evt)}
-          onDeleteAlert={handleDeleteAlert}
-        />
+            {/* Alert Events History Table */}
+            <AlertHistoryTable
+              alerts={alerts}
+              onSelectAlert={(evt) => setSelectedAlertForModal(evt)}
+              onViewScreenshot={(evt) => setSelectedAlertForModal(evt)}
+              onDeleteAlert={handleDeleteAlert}
+            />
+          </>
+        )}
 
       </main>
 
