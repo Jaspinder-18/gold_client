@@ -10,11 +10,16 @@ import { ConfigDrawer } from './components/ConfigDrawer';
 import { SymbolSearchModal } from './components/SymbolSearchModal';
 import { IncomingAlertModal } from './components/IncomingAlertModal';
 import { InteractiveChart } from './components/InteractiveChart';
+import { AuthModal } from './components/AuthModal';
 import { api } from './services/api';
+import { authService } from './services/auth';
 import { initSocketListeners } from './services/socket';
 import { audioAlert } from './utils/audioAlert';
 
 export function App() {
+  const [currentUser, setCurrentUser] = useState(() => authService.getCurrentUser());
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
   const [activeSymbol, setActiveSymbol] = useState('XAUUSD');
   const [symbolConfig, setSymbolConfig] = useState(null);
   const [marketData, setMarketData] = useState(null);
@@ -53,11 +58,23 @@ export function App() {
   const [isConfigDrawerOpen, setIsConfigDrawerOpen] = useState(false);
   const [isSymbolSearchOpen, setIsSymbolSearchOpen] = useState(false);
 
-  // Refresh active alerts list for symbol
+  // Subscribe to auth state updates & sync profile in background
+  useEffect(() => {
+    const unsubscribe = authService.subscribe((user) => {
+      setCurrentUser(user);
+    });
+    authService.syncProfile().then(user => {
+      if (user) setCurrentUser(user);
+    });
+    return unsubscribe;
+  }, []);
+
+  // Refresh active alerts list for symbol (Cross-device aware)
   const refreshActiveAlerts = useCallback(async (sym) => {
     try {
       const targetSym = sym || activeSymbol;
-      const res = await api.getActiveAlerts(targetSym);
+      const user = authService.getCurrentUser();
+      const res = await api.getActiveAlerts(targetSym, user?.email);
       if (res.data?.data) {
         setActiveAlerts(res.data.data);
       }
@@ -70,13 +87,14 @@ export function App() {
   const loadInitialData = useCallback(async (sym) => {
     try {
       const targetSym = sym || activeSymbol;
+      const user = authService.getCurrentUser();
 
       const [tickerRes, configRes, alertsRes, symRes, activeAlertsRes] = await Promise.allSettled([
         api.getTicker(),
         api.getConfig(targetSym),
         api.getAlerts({ limit: 6, symbol: targetSym }),
         api.getActiveSymbol(),
-        api.getActiveAlerts(targetSym)
+        api.getActiveAlerts(targetSym, user?.email)
       ]);
 
       if (symRes.status === 'fulfilled' && symRes.value.data?.data) {
@@ -161,11 +179,7 @@ export function App() {
       },
       onAlertListUpdated: (payload) => {
         if (payload && (!payload.symbol || payload.symbol === activeSymbol)) {
-          if (payload.activeAlerts) {
-            setActiveAlerts(payload.activeAlerts);
-          } else {
-            refreshActiveAlerts(activeSymbol);
-          }
+          refreshActiveAlerts(activeSymbol);
         }
       },
       onPivotUpdated: (data) => {
@@ -196,19 +210,30 @@ export function App() {
       },
       onAlertTriggered: (payload) => {
         const event = payload.event || payload;
+        const targetEmail = payload.userEmail || event?.userEmail;
+        const activeUser = authService.getCurrentUser();
+
+        // Check user notification preferences
+        const notificationsActive = activeUser ? (activeUser.notificationsEnabled !== false) : true;
+
+        // If alert was created for a specific user email, filter if user is logged into another account
+        if (targetEmail && activeUser?.email && targetEmail.toLowerCase() !== activeUser.email.toLowerCase()) {
+          return;
+        }
+
         if (event) {
           setAlerts(prev => [event, ...prev.filter(a => a._id !== event._id && a.eventId !== event.eventId)].slice(0, 6));
           
           // Pop up interactive Price Touch Alert Modal with Cancel and View Chart options
           setIncomingAlertModal(event);
 
-          // Trigger Loud Alarm Sound
-          if (isSoundEnabled) {
+          // Trigger Loud Alarm Sound only if enabled in user preferences & sound is active
+          if (isSoundEnabled && notificationsActive) {
             audioAlert.playAlarm({ durationSeconds: 20 });
           }
 
-          // Trigger Web Desktop Push Notification if permission granted
-          if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+          // Trigger Web Desktop Push Notification if permission granted and enabled
+          if (notificationsActive && typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
             try {
               const targetVal = event.customPrice || event.levelPrice || event.currentPrice;
               new Notification(`🚨 ${event.symbol} TOUCHED TARGET @ $${Number(event.currentPrice).toFixed(2)}`, {
@@ -224,7 +249,7 @@ export function App() {
         if (payload.alertId) {
           setActiveAlerts(prev => prev.filter(a => (a._id || a.id) !== payload.alertId));
         } else if (payload.activeAlerts) {
-          setActiveAlerts(payload.activeAlerts);
+          refreshActiveAlerts(activeSymbol);
         }
 
         if (payload.alertStates) {
@@ -336,6 +361,21 @@ export function App() {
     }
   };
 
+  const handleLogout = async () => {
+    await authService.logout();
+    setCurrentUser(null);
+    refreshActiveAlerts(activeSymbol);
+  };
+
+  const handleToggleNotifications = async (enabled) => {
+    if (currentUser) {
+      const res = await authService.updateNotifications(enabled);
+      if (res.success) {
+        setCurrentUser(prev => prev ? ({ ...prev, notificationsEnabled: enabled }) : null);
+      }
+    }
+  };
+
   const handleCancelIncomingAlert = useCallback(() => {
     audioAlert.stop();
     setIncomingAlertModal(null);
@@ -360,6 +400,10 @@ export function App() {
         onToggleTelegram={handleToggleTelegram}
         onOpenSymbolSearch={() => setIsSymbolSearchOpen(true)}
         onOpenSettings={() => setIsConfigDrawerOpen(true)}
+        currentUser={currentUser}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onLogout={handleLogout}
+        onToggleNotifications={handleToggleNotifications}
       />
 
       {/* Main Terminal Body */}
@@ -394,6 +438,8 @@ export function App() {
               onToggleTelegram={handleToggleTelegram}
               isSoundEnabled={isSoundEnabled}
               onToggleSound={handleToggleSound}
+              currentUser={currentUser}
+              onOpenAuthModal={() => setIsAuthModalOpen(true)}
               onAlertGenerated={(newEvent) => {
                 setAlerts(prev => [newEvent, ...prev.filter(a => a._id !== newEvent._id)].slice(0, 6));
                 setIncomingAlertModal(newEvent);
@@ -473,8 +519,20 @@ export function App() {
         onClose={() => setIsConfigDrawerOpen(false)}
         config={config}
         activeSymbol={activeSymbol}
+        currentUser={currentUser}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
         onSave={async (newConfig) => {
           setConfig(prev => ({ ...prev, ...newConfig }));
+        }}
+      />
+
+      {/* Auth Modal for Multi-Device Single ID Log In / Register / Reset */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onAuthSuccess={(user) => {
+          setCurrentUser(user);
+          refreshActiveAlerts(activeSymbol);
         }}
       />
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, RefreshCw, Sliders, CheckCircle2, Monitor, Layers, Send, Volume2, Play, Square, BellRing } from 'lucide-react';
+import { X, Save, RefreshCw, Sliders, CheckCircle2, Monitor, Layers, Send, Volume2, Play, Square, BellRing, Smartphone, ShieldCheck, LogIn, Bell, BellOff, User } from 'lucide-react';
 import { api } from '../services/api';
+import { authService } from '../services/auth';
 import { audioAlert, ALERT_SOUND_OPTIONS } from '../utils/audioAlert';
 
 const TIMEFRAMES = [
@@ -14,7 +15,7 @@ const TIMEFRAMES = [
   { value: 'D', label: '1D (Daily)' }
 ];
 
-export const ConfigDrawer = ({ config, activeSymbol = 'XAUUSD', isOpen, onClose, onSave }) => {
+export const ConfigDrawer = ({ config, activeSymbol = 'XAUUSD', isOpen, onClose, onSave, currentUser, onOpenAuthModal }) => {
   const [formData, setFormData] = useState({
     chartTimeframe: config?.chartTimeframe || '15',
     chartRange: config?.chartRange || '1D',
@@ -31,6 +32,21 @@ export const ConfigDrawer = ({ config, activeSymbol = 'XAUUSD', isOpen, onClose,
   const [soundVolume, setSoundVolume] = useState(audioAlert.volume);
   const [soundEnabled, setSoundEnabled] = useState(audioAlert.enabled);
   const [isPreviewing, setIsPreviewing] = useState(false);
+  const [isUpdatingNotif, setIsUpdatingNotif] = useState(false);
+
+  const handleTogglePushNotifications = async () => {
+    if (!currentUser?.email) return;
+    const currentEnabled = currentUser.notificationsEnabled !== false;
+    const nextVal = !currentEnabled;
+    setIsUpdatingNotif(true);
+    try {
+      await authService.updateNotifications(nextVal);
+    } catch (err) {
+      console.error('Failed to toggle notifications:', err);
+    } finally {
+      setIsUpdatingNotif(false);
+    }
+  };
 
   useEffect(() => {
     if (config) {
@@ -136,6 +152,86 @@ export const ConfigDrawer = ({ config, activeSymbol = 'XAUUSD', isOpen, onClose,
 
           <form id="settingsForm" onSubmit={handleSubmit} className="py-5 space-y-6">
             
+            {/* Multi-Device Account & Notification Sync */}
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900/90 to-amber-950/20 border border-amber-500/30 space-y-3.5 shadow-lg shadow-amber-500/5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-amber-400 font-mono">
+                  <Smartphone className="w-4 h-4 text-amber-400" />
+                  <span>Multi-Device Sync Account</span>
+                </div>
+                {currentUser && (
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold">
+                    {currentUser.activeDevicesCount ? `${currentUser.activeDevicesCount} Linked` : 'Synced'}
+                  </span>
+                )}
+              </div>
+
+              {currentUser ? (
+                <div className="space-y-3">
+                  <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                    <div className="overflow-hidden">
+                      <div className="text-xs font-bold text-white truncate">
+                        {currentUser.fullName || 'Trading Terminal Trader'}
+                      </div>
+                      <div className="text-[11px] text-slate-400 font-mono truncate">
+                        {currentUser.email}
+                      </div>
+                    </div>
+                    <div className="text-[10px] font-bold text-amber-400 font-mono bg-amber-500/10 px-2 py-1 rounded-lg border border-amber-500/20">
+                      WEB ID
+                    </div>
+                  </div>
+
+                  {/* Push Notifications Toggle */}
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
+                    <div>
+                      <div className="text-xs font-mono font-bold text-white flex items-center gap-1.5">
+                        {currentUser.notificationsEnabled !== false ? (
+                          <Bell className="w-3.5 h-3.5 text-emerald-400" />
+                        ) : (
+                          <BellOff className="w-3.5 h-3.5 text-slate-500" />
+                        )}
+                        <span>Push Notifications & Alarms</span>
+                      </div>
+                      <div className="text-[10px] text-slate-400">
+                        Syncs ON / OFF state with all mobile devices
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={isUpdatingNotif}
+                      onClick={handleTogglePushNotifications}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-black font-mono transition-all cursor-pointer ${
+                        currentUser.notificationsEnabled !== false
+                          ? 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40'
+                          : 'bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700'
+                      }`}
+                    >
+                      {isUpdatingNotif ? '...' : (currentUser.notificationsEnabled !== false ? 'ON' : 'OFF')}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 rounded-xl bg-slate-950/90 border border-slate-800 space-y-2.5">
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Log in with the same email as your Android & iOS app so all price targets and notification settings stay synchronized.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      if (onOpenAuthModal) onOpenAuthModal();
+                    }}
+                    className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black font-mono text-xs flex items-center justify-center gap-2 shadow-md cursor-pointer"
+                  >
+                    <LogIn className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>Sign In / Create Account (Sync)</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* Chart Screenshot Settings */}
             <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
               <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-amber-400">

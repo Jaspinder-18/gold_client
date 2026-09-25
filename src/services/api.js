@@ -16,11 +16,27 @@ export const api = {
   getKlines: (count = 120, symbol = '', timeframe = '5') => axios.get(`${API_BASE}/market/klines`, { params: { count, symbol, timeframe } }),
   getSystemHealth: () => axios.get(`${API_BASE}/market/health`),
 
-  // Multi-Price Alert Endpoints
-  getActiveAlerts: (symbol) => axios.get(`${API_BASE}/alerts/custom/list`, { params: { symbol } }),
+  // Multi-Price Alert Endpoints (Cross-Device & User Email aware)
+  getActiveAlerts: (symbol, userEmail) => axios.get(`${API_BASE}/alerts/custom/list`, { 
+    params: { 
+      symbol, 
+      ...(userEmail ? { userEmail: String(userEmail).trim().toLowerCase() } : {}) 
+    } 
+  }),
   createAlert: (data) => axios.post(`${API_BASE}/alerts/custom/create`, data),
   deleteAlertById: (id, symbol) => axios.delete(`${API_BASE}/alerts/custom/${id}`, { params: { symbol } }),
-  clearAllAlerts: (symbol) => axios.post(`${API_BASE}/alerts/custom/clear`, { symbol }),
+  clearAllAlerts: (symbol, userEmail) => axios.post(`${API_BASE}/alerts/custom/clear`, { 
+    symbol, 
+    ...(userEmail ? { userEmail: String(userEmail).trim().toLowerCase() } : {}) 
+  }),
+
+  // User Authentication & Multi-Device Sync Endpoints
+  login: (data) => axios.post(`${API_BASE}/auth/login`, data),
+  register: (data) => axios.post(`${API_BASE}/auth/register`, data),
+  logout: (data) => axios.post(`${API_BASE}/auth/logout`, data),
+  resetPassword: (data) => axios.post(`${API_BASE}/auth/reset-password`, data),
+  getProfile: (email) => axios.get(`${API_BASE}/auth/profile`, { params: { email: String(email).trim().toLowerCase() } }),
+  updateNotifications: (data) => axios.post(`${API_BASE}/auth/notifications`, data),
 
   // Alert History & System
   getAlerts: (params = {}) => axios.get(`${API_BASE}/alerts`, { params }),

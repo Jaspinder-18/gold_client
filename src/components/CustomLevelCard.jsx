@@ -32,7 +32,9 @@ export const CustomLevelCard = ({
   onToggleTelegram,
   onAlertGenerated,
   isSoundEnabled = true,
-  onToggleSound
+  onToggleSound,
+  currentUser = null,
+  onOpenAuthModal
 }) => {
   const currentPrice = marketData?.price ? Number(marketData.price) : null;
 
@@ -81,7 +83,9 @@ export const CustomLevelCard = ({
         targetPrice: targetPriceVal,
         condition,
         note: note.trim(),
-        createdBy: 'WEB'
+        createdBy: 'WEB',
+        userEmail: currentUser?.email || null,
+        userId: currentUser?.id || null
       });
 
       if (res.data?.data) {
@@ -90,7 +94,7 @@ export const CustomLevelCard = ({
         if (onAlertsChanged) {
           onAlertsChanged();
         }
-        setFeedbackMsg(`🎯 Target $${targetPriceVal.toFixed(2)} Armed & Synced!`);
+        setFeedbackMsg(`🎯 Target $${targetPriceVal.toFixed(2)} Armed & Synced Across Devices!`);
         setTimeout(() => setFeedbackMsg(''), 3000);
       }
     } catch (err) {
@@ -124,7 +128,7 @@ export const CustomLevelCard = ({
     }
     setIsClearingAll(true);
     try {
-      await api.clearAllAlerts(activeSymbol);
+      await api.clearAllAlerts(activeSymbol, currentUser?.email || null);
       if (onAlertsChanged) {
         onAlertsChanged();
       }
@@ -196,6 +200,23 @@ export const CustomLevelCard = ({
               <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-500/40 text-[10px] font-mono font-bold text-emerald-400">
                 {activeAlerts.length} ACTIVE
               </span>
+              {currentUser ? (
+                <span 
+                  className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-sky-500/15 border border-sky-500/30 text-[10px] font-mono text-sky-300 font-bold truncate max-w-[140px]" 
+                  title={`Targets sync across all devices for ${currentUser.email}`}
+                >
+                  📱 {currentUser.email.split('@')[0]}
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onOpenAuthModal}
+                  className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-[10px] font-mono text-amber-300 font-bold transition-all cursor-pointer"
+                  title="Click to sign in with the same email as your mobile app"
+                >
+                  📱 Sync Mobile
+                </button>
+              )}
             </div>
             <p className="text-xs text-slate-400">
               Auto-removes on price touch · Firebase Push & Telegram sync
