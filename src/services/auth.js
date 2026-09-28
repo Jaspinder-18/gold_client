@@ -1,4 +1,5 @@
 import { api } from './api';
+import { webFirebase } from './firebase';
 
 const USER_STORAGE_KEY = 'gold_user_profile';
 const TOKEN_STORAGE_KEY = 'gold_session_token';
@@ -7,6 +8,12 @@ const AUTH_EVENT_NAME = 'gold_auth_state_changed';
 class AuthService {
   constructor() {
     this._listeners = new Set();
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('gold_auth_expired', () => {
+        this._saveSession(null, null);
+      });
+    }
   }
 
   /**
@@ -37,11 +44,11 @@ class AuthService {
    * Check if user is logged in
    */
   isLoggedIn() {
-    return !!this.getCurrentUser();
+    return !!(this.getCurrentUser() && this.getToken());
   }
 
   /**
-   * Save user session locally
+   * Save user session locally (24/7 persistence)
    */
   _saveSession(user, token) {
     try {
@@ -69,7 +76,6 @@ class AuthService {
   subscribe(listener) {
     if (typeof listener === 'function') {
       this._listeners.add(listener);
-      // Immediately call with current user
       listener(this.getCurrentUser());
     }
     return () => {
@@ -92,29 +98,38 @@ class AuthService {
   }
 
   /**
-   * Login with email and password (multi-device)
+   * Login with email and password
    */
   async login({ email, password }) {
     try {
       const cleanEmail = String(email || '').trim().toLowerCase();
+      const deviceId = webFirebase.getDeviceId();
+      const deviceName = webFirebase.getDeviceName();
+      const fcmToken = localStorage.getItem('gold_fcm_web_token') || null;
+
       const payload = {
         email: cleanEmail,
         password,
-        platform: 'WEB',
-        deviceName: typeof navigator !== 'undefined' ? `${navigator.platform || 'Desktop'} · Web Browser` : 'Web Browser'
+        deviceId,
+        deviceName,
+        fcmToken,
+        platform: 'WEB'
       };
 
       const response = await api.login(payload);
       if (response.data?.success && response.data?.data) {
         const userData = response.data.data.user || response.data.data;
         const token = response.data.data.token || '';
-        
-        // Ensure notificationsEnabled flag exists
+
         if (userData.notificationsEnabled === undefined) {
           userData.notificationsEnabled = true;
         }
 
         this._saveSession(userData, token);
+
+        // Register Web FCM Push in background
+        webFirebase.requestPermissionAndRegister(token).catch(() => {});
+
         return { success: true, user: userData, token, message: response.data.message || 'Logged in successfully.' };
       }
 
@@ -132,18 +147,24 @@ class AuthService {
   }
 
   /**
-   * Register new user (multi-device)
+   * Register new user
    */
   async register({ fullName, email, password, confirmPassword }) {
     try {
       const cleanEmail = String(email || '').trim().toLowerCase();
+      const deviceId = webFirebase.getDeviceId();
+      const deviceName = webFirebase.getDeviceName();
+      const fcmToken = localStorage.getItem('gold_fcm_web_token') || null;
+
       const payload = {
         fullName: String(fullName || '').trim(),
         email: cleanEmail,
         password,
         confirmPassword,
-        platform: 'WEB',
-        deviceName: typeof navigator !== 'undefined' ? `${navigator.platform || 'Desktop'} · Web Browser` : 'Web Browser'
+        deviceId,
+        deviceName,
+        fcmToken,
+        platform: 'WEB'
       };
 
       const response = await api.register(payload);
@@ -156,6 +177,10 @@ class AuthService {
         }
 
         this._saveSession(userData, token);
+
+        // Register Web Push
+        webFirebase.requestPermissionAndRegister(token).catch(() => {});
+
         return { success: true, user: userData, token, message: response.data.message || 'Registered successfully.' };
       }
 
@@ -209,7 +234,7 @@ class AuthService {
    */
   async updateNotifications(enabled) {
     const user = this.getCurrentUser();
-    if (!user || !user.email) {
+    if (!user) {
       return { success: false, error: 'User is not logged in.' };
     }
 
@@ -236,11 +261,11 @@ class AuthService {
   }
 
   /**
-   * Sync and refresh latest profile data (device count, etc.)
+   * Sync and refresh latest profile data
    */
   async syncProfile() {
     const user = this.getCurrentUser();
-    if (!user || !user.email) return null;
+    if (!user) return null;
 
     try {
       const res = await api.getProfile(user.email);
@@ -259,19 +284,18 @@ class AuthService {
   }
 
   /**
-   * Get all registered devices and FCM tokens for the current user
+   * Get all registered devices for the current user
    */
   async getDevices() {
-    const user = this.getCurrentUser();
-    if (!user || !user.email) return { success: false, error: 'User not logged in.', devices: [] };
+    if (!this.isLoggedIn()) return { success: false, error: 'User not logged in.', devices: [] };
 
     try {
-      const res = await api.getDevices(user.email);
-      if (res.data?.success && res.data?.data) {
+      const res = await api.getConnectedDevices();
+      if (res.data?.success && Array.isArray(res.data?.data)) {
         return { 
           success: true, 
-          devices: Array.isArray(res.data.data) ? res.data.data : [],
-          activeDevicesCount: res.data.activeDevicesCount || 0
+          devices: res.data.data,
+          activeDevicesCount: res.data.total || res.data.data.length
         };
       }
       return { success: false, error: res.data?.error || 'Failed to fetch devices.', devices: [] };
@@ -282,16 +306,28 @@ class AuthService {
   }
 
   /**
-   * Remove / unlink a device by FCM token
+   * Toggle notifications for a specific device
    */
-  async removeDevice(token) {
-    const user = this.getCurrentUser();
-    if (!user || !user.email) return { success: false, error: 'User not logged in.' };
+  async toggleDeviceNotifications(deviceId, enabled) {
+    if (!this.isLoggedIn()) return { success: false, error: 'User not logged in.' };
 
     try {
-      const res = await api.removeDevice(user.email, token);
+      const res = await api.updateDeviceNotifications(deviceId, enabled);
+      return { success: res.data?.success, data: res.data?.data };
+    } catch (err) {
+      return { success: false, error: err.response?.data?.error || err.message };
+    }
+  }
+
+  /**
+   * Remove / unlink a device
+   */
+  async removeDevice(deviceId) {
+    if (!this.isLoggedIn()) return { success: false, error: 'User not logged in.' };
+
+    try {
+      const res = await api.removeDeviceById(deviceId);
       if (res.data?.success) {
-        // Refresh local user profile if deviceCount changed
         await this.syncProfile();
         return { 
           success: true, 
@@ -307,14 +343,18 @@ class AuthService {
   }
 
   /**
-   * Logout user from this web session
+   * Logout user from THIS device only
    */
   async logout() {
     const user = this.getCurrentUser();
+    const deviceId = webFirebase.getDeviceId();
+    const token = this.getToken();
+
     try {
-      if (user?.email) {
-        await api.logout({ email: user.email });
+      if (deviceId) {
+        await api.logout({ deviceId, email: user?.email }).catch(() => {});
       }
+      await webFirebase.unregisterDevice().catch(() => {});
     } catch (err) {
       // Ignore network errors on logout
     } finally {

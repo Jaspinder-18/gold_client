@@ -14,6 +14,7 @@ import { AuthModal } from './components/AuthModal';
 import { DevicesTab } from './components/DevicesTab';
 import { api } from './services/api';
 import { authService } from './services/auth';
+import { webFirebase } from './services/firebase';
 import { initSocketListeners } from './services/socket';
 import { audioAlert } from './utils/audioAlert';
 
@@ -70,6 +71,35 @@ export function App() {
     });
     return unsubscribe;
   }, []);
+
+  // Web Push & Foreground Push Notification Handler
+  useEffect(() => {
+    if (!currentUser) return;
+
+    webFirebase.initialize();
+
+    const unsub = webFirebase.onForegroundMessage((payload) => {
+      const data = payload.data || {};
+      const targetVal = parseFloat(data.targetPrice || data.triggerPrice || 0);
+      const currVal = parseFloat(data.currentPrice || data.triggerPrice || targetVal);
+
+      if (isSoundEnabled) {
+        audioAlert.playAlarm({ durationSeconds: 2.5 });
+      }
+
+      setIncomingAlertModal({
+        alertId: data.alertId,
+        symbol: data.symbol || activeSymbol,
+        targetPrice: targetVal,
+        currentPrice: currVal,
+        level: data.level || 'CUSTOM',
+        screenshotPath: data.screenshotUrl || '',
+        triggerReason: data.message || `Price touched $${targetVal.toFixed(2)}`
+      });
+    });
+
+    return unsub;
+  }, [currentUser, isSoundEnabled, activeSymbol]);
 
   // Refresh active alerts list for symbol (Cross-device aware)
   const refreshActiveAlerts = useCallback(async (sym) => {
@@ -390,6 +420,36 @@ export function App() {
       setSelectedAlertForModal(alertToView);
     }
   }, []);
+
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-4 selection:bg-amber-400 selection:text-slate-950 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(245,158,11,0.18),rgba(255,255,255,0))] pointer-events-none" />
+        <div className="text-center mb-6 relative z-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 font-mono text-xs font-bold mb-3 shadow-lg">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            INSTITUTIONAL MARKET TERMINAL
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-white font-mono tracking-wider">
+            GOLD ALERT TERMINAL
+          </h1>
+          <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+            Please log in with your account to access real-time multi-device alerts and Fibonacci pivot levels.
+          </p>
+        </div>
+
+        <AuthModal
+          isOpen={true}
+          isMandatory={true}
+          onClose={() => {}}
+          onAuthSuccess={(user) => {
+            setCurrentUser(user);
+            refreshActiveAlerts(activeSymbol);
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-amber-400 selection:text-slate-950">

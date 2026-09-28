@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { authService } from '../services/auth';
 
-export const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
+export const AuthModal = ({ isOpen, onClose, onAuthSuccess, isMandatory = false }) => {
   const [activeTab, setActiveTab] = useState('login'); // 'login' | 'register' | 'forgot'
   
   // Login form state
@@ -210,13 +210,15 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 hover:border-slate-700 transition-all cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          {!isMandatory && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 hover:border-slate-700 transition-all cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* Multi-Device Sync Callout */}
